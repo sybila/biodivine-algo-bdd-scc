@@ -2,12 +2,12 @@
 //!
 //! See `test_network.rs` for the complete documentation of the test network structure.
 
-use super::llm_test_network::sets::{
+use super::test_llm_example_network::sets::{
     ALL_STATES, ATTRACTOR_1, ATTRACTOR_2, CAN_REACH_ATTR1, CAN_REACH_ATTR2, SOURCE_STATES,
     STRONG_BASIN_ATTR1, STRONG_BASIN_ATTR2, WEAK_BASIN,
 };
-use super::llm_test_network::states::*;
-use super::llm_test_network::{create_test_network, mk_state, mk_states};
+use super::test_llm_example_network::states::*;
+use super::test_llm_example_network::{create_test_network, mk_state, mk_states};
 use crate::Reachability;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 

@@ -1,8 +1,9 @@
 #[cfg(test)]
-mod llm_naive_algorithm_tests;
+mod test_llm_algorithm_naive;
 #[cfg(test)]
-mod llm_test_network;
-mod naive_algorithm;
+mod test_llm_example_network;
+mod algorithm_naive;
+mod algorithm_saturation;
 
 /// An "algorithm struct" which implements various symbolic reachability methods.
 pub struct Reachability;
