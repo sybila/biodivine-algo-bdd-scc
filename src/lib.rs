@@ -5,6 +5,12 @@ pub mod fwd_bwd;
 mod hamming;
 mod trimming;
 
+/// "Utility" methods implementing individual reachability routines (naive, saturation)
+/// and their trapping counterparts.
+mod reachability_utils;
+
+pub use reachability_utils::Reachability;
+
 /// Assert that the given graph has no colors.
 fn assert_precondition_graph_not_colored(graph: &SymbolicAsyncGraph) {
     assert_eq!(

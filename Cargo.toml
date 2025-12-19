@@ -10,6 +10,8 @@ expensive-tests = []
 biodivine-lib-bdd = ">=0.6.2, <1.0.0"
 biodivine-lib-param-bn = ">=0.6.2, <1.0.0"
 num-bigint = "0.4"
+cancel-this = "0.3"
+log = "0.4"
 
 [dev-dependencies]
 test-generator = "0.3.1"
