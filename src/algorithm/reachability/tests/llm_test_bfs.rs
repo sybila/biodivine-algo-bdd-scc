@@ -15,6 +15,14 @@ use crate::algorithm::reachability::{
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use cancel_this::Cancellable;
 
+/// Initialize env_logger for tests. Safe to call multiple times.
+fn init_logger() {
+    let _ = env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Trace)
+        .is_test(true)
+        .try_init();
+}
+
 // ========== Parametrized test helpers ==========
 
 /// Generic helper function for forward reachability tests.
@@ -23,6 +31,7 @@ fn test_reach_forward_from_empty_set_impl<F>() -> Cancellable<()>
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let empty = graph.mk_empty_colored_vertices();
 
@@ -39,6 +48,7 @@ fn test_reach_forward_from_fixed_point_impl<F>() -> Cancellable<()>
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
 
@@ -56,6 +66,7 @@ fn test_reach_forward_from_attractor_2_impl<F>() -> Cancellable<()>
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s110 = mk_state(&graph, S110);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
@@ -74,6 +85,7 @@ fn test_reach_forward_from_strong_basin_of_attractor_1_impl<F>() -> Cancellable<
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s001 = mk_state(&graph, S001);
     let s000 = mk_state(&graph, S000);
@@ -93,6 +105,7 @@ fn test_reach_forward_from_strong_basin_of_attractor_2_impl<F>() -> Cancellable<
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s101 = mk_state(&graph, S101);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
@@ -112,6 +125,7 @@ fn test_reach_forward_from_weak_basin_reaches_both_attractors_impl<F>() -> Cance
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s011 = mk_state(&graph, S011);
     let s000 = mk_state(&graph, S000);
@@ -137,6 +151,7 @@ fn test_reach_forward_from_weak_basin_100_impl<F>() -> Cancellable<()>
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s100 = mk_state(&graph, S100);
     let s000 = mk_state(&graph, S000);
@@ -164,6 +179,7 @@ fn test_reach_forward_includes_initial_impl<F>() -> Cancellable<()>
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
 
     // For any starting set, forward reachability must include the initial set
@@ -184,6 +200,7 @@ fn test_reach_backward_from_empty_set_impl<B>() -> Cancellable<()>
 where
     B: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let empty = graph.mk_empty_colored_vertices();
 
@@ -200,6 +217,7 @@ fn test_reach_backward_to_fixed_point_impl<B>() -> Cancellable<()>
 where
     B: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
 
@@ -218,6 +236,7 @@ fn test_reach_backward_to_attractor_2_impl<B>() -> Cancellable<()>
 where
     B: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
@@ -236,6 +255,7 @@ fn test_reach_backward_from_single_state_in_cycle_impl<B>() -> Cancellable<()>
 where
     B: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s110 = mk_state(&graph, S110);
 
@@ -256,6 +276,7 @@ fn test_reach_backward_includes_initial_impl<B>() -> Cancellable<()>
 where
     B: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
 
     // For any starting set, backward reachability must include the initial set
@@ -277,6 +298,7 @@ where
     F: ReachabilityAlgorithm,
     B: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
 
     // The SCC containing a state is: forward_reach(s) ∩ backward_reach(s)
@@ -310,6 +332,7 @@ fn test_basin_separation_impl<F>() -> Cancellable<()>
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
@@ -369,6 +392,7 @@ fn test_forward_reach_from_sources_covers_everything_impl<F>() -> Cancellable<()
 where
     F: ReachabilityAlgorithm,
 {
+    init_logger();
     let graph = create_test_network();
     let sources = mk_states(&graph, SOURCE_STATES);
     let all = graph.mk_unit_colored_vertices();
