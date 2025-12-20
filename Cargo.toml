@@ -3,9 +3,6 @@ name = "biodivine-lib-algo-scc"
 version = "0.1.0"
 edition = "2024"
 
-[features]
-expensive-tests = []
-
 [dependencies]
 biodivine-lib-bdd = ">=0.6.2, <1.0.0"
 biodivine-lib-param-bn = ">=0.6.2, <1.0.0"
@@ -15,6 +12,12 @@ log = "0.4"
 
 [dev-dependencies]
 test-generator = "0.3.1"
+env_logger = "*"
+
+[profile.test]
+# Required to parse some larger models during testing.
+# (also helps us to actually cover more cases faster)
+opt-level = 2
 
 [lib]
 name = "biodivine_lib_algo_scc"
