@@ -3,8 +3,8 @@
 //! See `test_network.rs` for the complete documentation of the test network structure.
 
 use super::llm_example_network::sets::{
-    ALL_STATES, ATTRACTOR_2, CAN_REACH_ATTR1, CAN_REACH_ATTR2, SOURCE_STATES, STRONG_BASIN_ATTR1,
-    STRONG_BASIN_ATTR2, WEAK_BASIN,
+    ALL_STATES, ATTRACTOR_1, ATTRACTOR_2, CAN_REACH_ATTR1, CAN_REACH_ATTR2, SOURCE_STATES,
+    STRONG_BASIN_ATTR1, STRONG_BASIN_ATTR2, WEAK_BASIN,
 };
 use super::llm_example_network::states::*;
 use super::llm_example_network::{create_test_network, mk_state, mk_states};
@@ -88,12 +88,12 @@ where
     init_logger();
     let graph = create_test_network();
     let s001 = mk_state(&graph, S001);
-    let s000 = mk_state(&graph, S000);
+    let attractor_1 = mk_states(&graph, ATTRACTOR_1);
 
     let result = F::compute((graph, s001.clone()))?;
 
     // 001 → 000 (fixed point), so we reach {001, 000}
-    let expected = s001.union(&s000);
+    let expected = s001.union(&attractor_1);
     assert_eq!(
         result, expected,
         "Forward reach from 001 should be {{000, 001}}"
@@ -128,7 +128,7 @@ where
     init_logger();
     let graph = create_test_network();
     let s011 = mk_state(&graph, S011);
-    let s000 = mk_state(&graph, S000);
+    let attractor_1 = mk_states(&graph, ATTRACTOR_1);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let result = F::compute((graph, s011.clone()))?;
@@ -137,7 +137,7 @@ where
     // - 011 → 010 → 000 (attractor 1)
     // - 011 → 111 → 110 → 111 ... (attractor 2)
     assert!(
-        !result.intersect(&s000).is_empty(),
+        !result.intersect(&attractor_1).is_empty(),
         "Forward reach from 011 should include attractor 1 (000)"
     );
     assert!(
@@ -154,7 +154,7 @@ where
     init_logger();
     let graph = create_test_network();
     let s100 = mk_state(&graph, S100);
-    let s000 = mk_state(&graph, S000);
+    let attractor_1 = mk_states(&graph, ATTRACTOR_1);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let result = F::compute((graph.clone(), s100.clone()))?;
@@ -170,7 +170,7 @@ where
     );
 
     // Verify it reaches both attractors
-    assert!(s000.is_subset(&result));
+    assert!(attractor_1.is_subset(&result));
     assert!(attractor_2.is_subset(&result));
     Ok(())
 }
@@ -334,7 +334,7 @@ where
 {
     init_logger();
     let graph = create_test_network();
-    let s000 = mk_state(&graph, S000);
+    let attractor_1 = mk_states(&graph, ATTRACTOR_1);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     // States in strong basin of attractor 1 cannot reach attractor 2
@@ -347,7 +347,7 @@ where
             state
         );
         assert!(
-            !reachable.intersect(&s000).is_empty(),
+            !reachable.intersect(&attractor_1).is_empty(),
             "State {:03b} in strong basin of attr 1 should reach attr 1",
             state
         );
@@ -358,7 +358,7 @@ where
         let s = mk_state(&graph, *state);
         let reachable = F::compute((graph.clone(), s))?;
         assert!(
-            reachable.intersect(&s000).is_empty(),
+            reachable.intersect(&attractor_1).is_empty(),
             "State {:03b} in strong basin of attr 2 should not reach attr 1",
             state
         );
@@ -374,7 +374,7 @@ where
         let s = mk_state(&graph, *state);
         let reachable = F::compute((graph.clone(), s))?;
         assert!(
-            !reachable.intersect(&s000).is_empty(),
+            !reachable.intersect(&attractor_1).is_empty(),
             "State {:03b} in weak basin should reach attr 1",
             state
         );
