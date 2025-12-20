@@ -25,7 +25,7 @@ pub trait Algorithm {
     type Output;
 
     /// Create a new instance of [`Algorithm`] from an initial state object.
-    fn create(initial_state: Self::State) -> Self
+    fn create<T: Into<Self::State>>(initial_state: T) -> Self
     where
         Self: Sized;
 
@@ -52,7 +52,7 @@ pub trait Algorithm {
     }
 
     /// Run this algorithm as a single ongoing (but cancellable) computation.
-    fn compute(initial_state: Self::State) -> Cancellable<Self::Output>
+    fn compute<T: Into<Self::State>>(initial_state: T) -> Cancellable<Self::Output>
     where
         Self: Sized,
     {

@@ -19,10 +19,11 @@ impl<S: StepOperator> Algorithm for Reachability<S> {
     type State = ReachabilityState;
     type Output = GraphColoredVertices;
 
-    fn create(initial_state: Self::State) -> Self
+    fn create<T: Into<Self::State>>(initial_state: T) -> Self
     where
         Self: Sized,
     {
+        let initial_state: ReachabilityState = initial_state.into();
         info!(
             "Initializing reachability (step function=`{}`; elements=`{}`; BDD nodes=`{}`).",
             type_name::<S>(),
