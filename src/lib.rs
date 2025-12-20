@@ -5,11 +5,8 @@ pub mod fwd_bwd;
 mod hamming;
 mod trimming;
 
-/// "Utility" methods implementing individual reachability routines (naive, saturation)
-/// and their trapping counterparts.
-mod reachability_utils;
+pub mod algorithm;
 
-pub use reachability_utils::Reachability;
 mod algorithm_trait;
 pub use algorithm_trait::Algorithm;
 
