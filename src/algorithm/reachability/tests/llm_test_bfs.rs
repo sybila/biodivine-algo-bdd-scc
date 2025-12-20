@@ -10,20 +10,26 @@ use super::llm_example_network::states::*;
 use super::llm_example_network::{create_test_network, mk_state, mk_states};
 use crate::Algorithm;
 use crate::algorithm::reachability::{
-    BackwardReachabilityBFS, ForwardReachabilityBFS, ReachabilityState,
+    BackwardReachability, BackwardReachabilityBFS, ForwardReachability, ForwardReachabilityBFS,
+    ReachabilityAlgorithm, ReachabilityState,
 };
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
+use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::Cancellable;
 
-// ========== Tests for reach_forward_naive ==========
+// ========== Parametrized test helpers ==========
 
-#[test]
-fn test_reach_forward_from_empty_set() -> Cancellable<()> {
+/// Generic helper function for forward reachability tests.
+/// This allows us to test both BFS and saturation variants with the same logic.
+fn test_reach_forward_from_empty_set_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let empty = graph.mk_empty_colored_vertices();
 
     let state = ReachabilityState::initial(graph, empty);
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     assert!(
         result.is_empty(),
@@ -32,13 +38,15 @@ fn test_reach_forward_from_empty_set() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_from_fixed_point() -> Cancellable<()> {
+fn test_reach_forward_from_fixed_point_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
 
     let state = ReachabilityState::initial(graph, s000.clone());
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     // A fixed point can only reach itself
     assert_eq!(
@@ -48,14 +56,16 @@ fn test_reach_forward_from_fixed_point() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_from_attractor_2() -> Cancellable<()> {
+fn test_reach_forward_from_attractor_2_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s110 = mk_state(&graph, S110);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph, s110.clone());
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     // From 110, we can reach 111 (and back), so we reach the whole attractor
     assert_eq!(
@@ -65,14 +75,16 @@ fn test_reach_forward_from_attractor_2() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_from_strong_basin_of_attractor_1() -> Cancellable<()> {
+fn test_reach_forward_from_strong_basin_of_attractor_1_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s001 = mk_state(&graph, S001);
     let s000 = mk_state(&graph, S000);
 
     let state = ReachabilityState::initial(graph, s001.clone());
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     // 001 → 000 (fixed point), so we reach {001, 000}
     let expected = s001.union(&s000);
@@ -83,14 +95,16 @@ fn test_reach_forward_from_strong_basin_of_attractor_1() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_from_strong_basin_of_attractor_2() -> Cancellable<()> {
+fn test_reach_forward_from_strong_basin_of_attractor_2_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s101 = mk_state(&graph, S101);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph, s101.clone());
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     // 101 → 111 → 110 → 111 ..., so we reach {101, 110, 111}
     let expected = s101.union(&attractor_2);
@@ -101,15 +115,17 @@ fn test_reach_forward_from_strong_basin_of_attractor_2() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_from_weak_basin_reaches_both_attractors() -> Cancellable<()> {
+fn test_reach_forward_from_weak_basin_reaches_both_attractors_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s011 = mk_state(&graph, S011);
     let s000 = mk_state(&graph, S000);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph, s011.clone());
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     // 011 can reach both attractors:
     // - 011 → 010 → 000 (attractor 1)
@@ -125,15 +141,17 @@ fn test_reach_forward_from_weak_basin_reaches_both_attractors() -> Cancellable<(
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_from_weak_basin_100() -> Cancellable<()> {
+fn test_reach_forward_from_weak_basin_100_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s100 = mk_state(&graph, S100);
     let s000 = mk_state(&graph, S000);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph.clone(), s100.clone());
-    let result = ForwardReachabilityBFS::compute(state)?;
+    let result = F::compute(state)?;
 
     // 100 can reach both attractors:
     // - 100 → 000 (attractor 1)
@@ -151,15 +169,17 @@ fn test_reach_forward_from_weak_basin_100() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_forward_includes_initial() -> Cancellable<()> {
+fn test_reach_forward_includes_initial_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
 
     // For any starting set, forward reachability must include the initial set
     for state in ALL_STATES {
         let initial = mk_state(&graph, *state);
         let algo_state = ReachabilityState::initial(graph.clone(), initial.clone());
-        let result = ForwardReachabilityBFS::compute(algo_state)?;
+        let result = F::compute(algo_state)?;
         assert!(
             initial.is_subset(&result),
             "Forward reach from {:03b} must include the initial state",
@@ -169,15 +189,16 @@ fn test_reach_forward_includes_initial() -> Cancellable<()> {
     Ok(())
 }
 
-// ========== Tests for reach_backward_naive ==========
-
-#[test]
-fn test_reach_backward_from_empty_set() -> Cancellable<()> {
+/// Generic helper function for backward reachability tests.
+fn test_reach_backward_from_empty_set_impl<B>() -> Cancellable<()>
+where
+    B: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let empty = graph.mk_empty_colored_vertices();
 
     let state = ReachabilityState::initial(graph, empty);
-    let result = BackwardReachabilityBFS::compute(state)?;
+    let result = B::compute(state)?;
 
     assert!(
         result.is_empty(),
@@ -186,13 +207,15 @@ fn test_reach_backward_from_empty_set() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_backward_to_fixed_point() -> Cancellable<()> {
+fn test_reach_backward_to_fixed_point_impl<B>() -> Cancellable<()>
+where
+    B: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
 
     let state = ReachabilityState::initial(graph.clone(), s000);
-    let result = BackwardReachabilityBFS::compute(state)?;
+    let result = B::compute(state)?;
 
     // States that can reach 000: {000, 001, 010, 011, 100}
     let expected = mk_states(&graph, CAN_REACH_ATTR1);
@@ -203,13 +226,15 @@ fn test_reach_backward_to_fixed_point() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_backward_to_attractor_2() -> Cancellable<()> {
+fn test_reach_backward_to_attractor_2_impl<B>() -> Cancellable<()>
+where
+    B: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph.clone(), attractor_2.clone());
-    let result = BackwardReachabilityBFS::compute(state)?;
+    let result = B::compute(state)?;
 
     // States that can reach {110, 111}: {011, 100, 101, 110, 111}
     let expected = mk_states(&graph, CAN_REACH_ATTR2);
@@ -220,13 +245,15 @@ fn test_reach_backward_to_attractor_2() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_backward_from_single_state_in_cycle() -> Cancellable<()> {
+fn test_reach_backward_from_single_state_in_cycle_impl<B>() -> Cancellable<()>
+where
+    B: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s110 = mk_state(&graph, S110);
 
     let state = ReachabilityState::initial(graph.clone(), s110);
-    let result = BackwardReachabilityBFS::compute(state)?;
+    let result = B::compute(state)?;
 
     // Reaching just 110: 111 can reach 110 directly, then all states that can reach 111
     // Chain: 101 → 111 → 110, 100 → 110, 011 → 111 → 110
@@ -239,15 +266,17 @@ fn test_reach_backward_from_single_state_in_cycle() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_reach_backward_includes_initial() -> Cancellable<()> {
+fn test_reach_backward_includes_initial_impl<B>() -> Cancellable<()>
+where
+    B: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
 
     // For any starting set, backward reachability must include the initial set
     for state in ALL_STATES {
         let initial = mk_state(&graph, *state);
         let algo_state = ReachabilityState::initial(graph.clone(), initial.clone());
-        let result = BackwardReachabilityBFS::compute(algo_state)?;
+        let result = B::compute(algo_state)?;
         assert!(
             initial.is_subset(&result),
             "Backward reach to {:03b} must include the initial state",
@@ -257,10 +286,12 @@ fn test_reach_backward_includes_initial() -> Cancellable<()> {
     Ok(())
 }
 
-// ========== Integration / SCC-related tests ==========
-
-#[test]
-fn test_scc_via_forward_backward_intersection() -> Cancellable<()> {
+/// Generic helper for SCC tests that need both forward and backward algorithms.
+fn test_scc_via_forward_backward_intersection_impl<F, B>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+    B: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
 
     // The SCC containing a state is: forward_reach(s) ∩ backward_reach(s)
@@ -268,16 +299,16 @@ fn test_scc_via_forward_backward_intersection() -> Cancellable<()> {
     // Test for fixed point 000: SCC should be just {000}
     let s000 = mk_state(&graph, S000);
     let state = ReachabilityState::initial(graph.clone(), s000.clone());
-    let fwd_000 = ForwardReachabilityBFS::compute(state.clone())?;
-    let bwd_000 = BackwardReachabilityBFS::compute(state)?;
+    let fwd_000 = F::compute(state.clone())?;
+    let bwd_000 = B::compute(state)?;
     let scc_000 = fwd_000.intersect(&bwd_000);
     assert_eq!(scc_000, s000, "SCC of 000 should be {{000}}");
 
     // Test for state in cycle: SCC should be {110, 111}
     let s110 = mk_state(&graph, S110);
     let state = ReachabilityState::initial(graph.clone(), s110.clone());
-    let fwd_110 = ForwardReachabilityBFS::compute(state.clone())?;
-    let bwd_110 = BackwardReachabilityBFS::compute(state)?;
+    let fwd_110 = F::compute(state.clone())?;
+    let bwd_110 = B::compute(state)?;
     let scc_110 = fwd_110.intersect(&bwd_110);
     let expected_scc = mk_states(&graph, ATTRACTOR_2);
     assert_eq!(scc_110, expected_scc, "SCC of 110 should be {{110, 111}}");
@@ -285,16 +316,18 @@ fn test_scc_via_forward_backward_intersection() -> Cancellable<()> {
     // Test for transient state: SCC should be just itself (trivial)
     let s001 = mk_state(&graph, S001);
     let state = ReachabilityState::initial(graph.clone(), s001.clone());
-    let fwd_001 = ForwardReachabilityBFS::compute(state.clone())?;
-    let bwd_001 = BackwardReachabilityBFS::compute(state)?;
+    let fwd_001 = F::compute(state.clone())?;
+    let bwd_001 = B::compute(state)?;
     let scc_001 = fwd_001.intersect(&bwd_001);
     assert_eq!(scc_001, s001, "SCC of 001 should be {{001}} (trivial)");
 
     Ok(())
 }
 
-#[test]
-fn test_basin_separation() -> Cancellable<()> {
+fn test_basin_separation_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
@@ -302,8 +335,7 @@ fn test_basin_separation() -> Cancellable<()> {
     // States in strong basin of attractor 1 cannot reach attractor 2
     for state in STRONG_BASIN_ATTR1 {
         let s = mk_state(&graph, *state);
-        let reachable =
-            ForwardReachabilityBFS::compute(ReachabilityState::initial(graph.clone(), s))?;
+        let reachable = F::compute(ReachabilityState::initial(graph.clone(), s))?;
         assert!(
             reachable.intersect(&attractor_2).is_empty(),
             "State {:03b} in strong basin of attr 1 should not reach attr 2",
@@ -319,8 +351,7 @@ fn test_basin_separation() -> Cancellable<()> {
     // States in strong basin of attractor 2 cannot reach attractor 1
     for state in STRONG_BASIN_ATTR2 {
         let s = mk_state(&graph, *state);
-        let reachable =
-            ForwardReachabilityBFS::compute(ReachabilityState::initial(graph.clone(), s))?;
+        let reachable = F::compute(ReachabilityState::initial(graph.clone(), s))?;
         assert!(
             reachable.intersect(&s000).is_empty(),
             "State {:03b} in strong basin of attr 2 should not reach attr 1",
@@ -336,8 +367,7 @@ fn test_basin_separation() -> Cancellable<()> {
     // States in weak basin can reach both attractors
     for state in WEAK_BASIN {
         let s = mk_state(&graph, *state);
-        let reachable =
-            ForwardReachabilityBFS::compute(ReachabilityState::initial(graph.clone(), s))?;
+        let reachable = F::compute(ReachabilityState::initial(graph.clone(), s))?;
         assert!(
             !reachable.intersect(&s000).is_empty(),
             "State {:03b} in weak basin should reach attr 1",
@@ -353,14 +383,16 @@ fn test_basin_separation() -> Cancellable<()> {
     Ok(())
 }
 
-#[test]
-fn test_forward_reach_from_sources_covers_everything() -> Cancellable<()> {
+fn test_forward_reach_from_sources_covers_everything_impl<F>() -> Cancellable<()>
+where
+    F: ReachabilityAlgorithm,
+{
     let graph = create_test_network();
     let sources = mk_states(&graph, SOURCE_STATES);
     let all = graph.mk_unit_colored_vertices();
 
     // Forward reachability from all source states should cover the entire state space
-    let reachable = ForwardReachabilityBFS::compute(ReachabilityState::initial(graph, sources))?;
+    let reachable = F::compute(ReachabilityState::initial(graph, sources))?;
 
     assert_eq!(
         reachable, all,
@@ -368,4 +400,187 @@ fn test_forward_reach_from_sources_covers_everything() -> Cancellable<()> {
     );
 
     Ok(())
+}
+
+// ========== Tests for BFS forward algorithms ==========
+
+#[test]
+fn test_reach_forward_from_empty_set_bfs() -> Cancellable<()> {
+    test_reach_forward_from_empty_set_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_from_fixed_point_bfs() -> Cancellable<()> {
+    test_reach_forward_from_fixed_point_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_from_attractor_2_bfs() -> Cancellable<()> {
+    test_reach_forward_from_attractor_2_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_from_strong_basin_of_attractor_1_bfs() -> Cancellable<()> {
+    test_reach_forward_from_strong_basin_of_attractor_1_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_from_strong_basin_of_attractor_2_bfs() -> Cancellable<()> {
+    test_reach_forward_from_strong_basin_of_attractor_2_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_from_weak_basin_reaches_both_attractors_bfs() -> Cancellable<()> {
+    test_reach_forward_from_weak_basin_reaches_both_attractors_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_from_weak_basin_100_bfs() -> Cancellable<()> {
+    test_reach_forward_from_weak_basin_100_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_forward_includes_initial_bfs() -> Cancellable<()> {
+    test_reach_forward_includes_initial_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_basin_separation_bfs() -> Cancellable<()> {
+    test_basin_separation_impl::<ForwardReachabilityBFS>()
+}
+
+#[test]
+fn test_forward_reach_from_sources_covers_everything_bfs() -> Cancellable<()> {
+    test_forward_reach_from_sources_covers_everything_impl::<ForwardReachabilityBFS>()
+}
+
+// ========== Tests for saturation forward algorithms ==========
+
+#[test]
+fn test_reach_forward_from_empty_set_sat() -> Cancellable<()> {
+    test_reach_forward_from_empty_set_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_from_fixed_point_sat() -> Cancellable<()> {
+    test_reach_forward_from_fixed_point_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_from_attractor_2_sat() -> Cancellable<()> {
+    test_reach_forward_from_attractor_2_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_from_strong_basin_of_attractor_1_sat() -> Cancellable<()> {
+    test_reach_forward_from_strong_basin_of_attractor_1_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_from_strong_basin_of_attractor_2_sat() -> Cancellable<()> {
+    test_reach_forward_from_strong_basin_of_attractor_2_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_from_weak_basin_reaches_both_attractors_sat() -> Cancellable<()> {
+    test_reach_forward_from_weak_basin_reaches_both_attractors_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_from_weak_basin_100_sat() -> Cancellable<()> {
+    test_reach_forward_from_weak_basin_100_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_reach_forward_includes_initial_sat() -> Cancellable<()> {
+    test_reach_forward_includes_initial_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_basin_separation_sat() -> Cancellable<()> {
+    test_basin_separation_impl::<ForwardReachability>()
+}
+
+#[test]
+fn test_forward_reach_from_sources_covers_everything_sat() -> Cancellable<()> {
+    test_forward_reach_from_sources_covers_everything_impl::<ForwardReachability>()
+}
+
+// ========== Tests for BFS backward algorithms ==========
+
+#[test]
+fn test_reach_backward_from_empty_set_bfs() -> Cancellable<()> {
+    test_reach_backward_from_empty_set_impl::<BackwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_backward_to_fixed_point_bfs() -> Cancellable<()> {
+    test_reach_backward_to_fixed_point_impl::<BackwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_backward_to_attractor_2_bfs() -> Cancellable<()> {
+    test_reach_backward_to_attractor_2_impl::<BackwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_backward_from_single_state_in_cycle_bfs() -> Cancellable<()> {
+    test_reach_backward_from_single_state_in_cycle_impl::<BackwardReachabilityBFS>()
+}
+
+#[test]
+fn test_reach_backward_includes_initial_bfs() -> Cancellable<()> {
+    test_reach_backward_includes_initial_impl::<BackwardReachabilityBFS>()
+}
+
+// ========== Tests for saturation backward algorithms ==========
+
+#[test]
+fn test_reach_backward_from_empty_set_sat() -> Cancellable<()> {
+    test_reach_backward_from_empty_set_impl::<BackwardReachability>()
+}
+
+#[test]
+fn test_reach_backward_to_fixed_point_sat() -> Cancellable<()> {
+    test_reach_backward_to_fixed_point_impl::<BackwardReachability>()
+}
+
+#[test]
+fn test_reach_backward_to_attractor_2_sat() -> Cancellable<()> {
+    test_reach_backward_to_attractor_2_impl::<BackwardReachability>()
+}
+
+#[test]
+fn test_reach_backward_from_single_state_in_cycle_sat() -> Cancellable<()> {
+    test_reach_backward_from_single_state_in_cycle_impl::<BackwardReachability>()
+}
+
+#[test]
+fn test_reach_backward_includes_initial_sat() -> Cancellable<()> {
+    test_reach_backward_includes_initial_impl::<BackwardReachability>()
+}
+
+// ========== Tests for SCC (forward + backward combinations) ==========
+
+#[test]
+fn test_scc_via_forward_backward_intersection_bfs_bfs() -> Cancellable<()> {
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachabilityBFS, BackwardReachabilityBFS>(
+    )
+}
+
+#[test]
+fn test_scc_via_forward_backward_intersection_sat_sat() -> Cancellable<()> {
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachability, BackwardReachability>()
+}
+
+#[test]
+fn test_scc_via_forward_backward_intersection_bfs_sat() -> Cancellable<()> {
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachabilityBFS, BackwardReachability>(
+    )
+}
+
+#[test]
+fn test_scc_via_forward_backward_intersection_sat_bfs() -> Cancellable<()> {
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachability, BackwardReachabilityBFS>(
+    )
 }

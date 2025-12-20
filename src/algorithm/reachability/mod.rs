@@ -8,11 +8,23 @@ mod step_operators;
 #[cfg(test)]
 mod tests;
 
+use crate::Algorithm;
 pub use reachability_algorithm::Reachability;
 pub use step_operators::AllPredecessors;
 pub use step_operators::AllSuccessors;
 pub use step_operators::SaturationPredecessors;
 pub use step_operators::SaturationSuccessors;
+
+/// A helper trait which allows us to use [`ReachabilityAlgorithm`] as a shorthand for
+/// `Algorithm<State = ReachabilityState, Output = GraphColoredVertices>`.
+pub trait ReachabilityAlgorithm:
+    Algorithm<State = ReachabilityState, Output = GraphColoredVertices>
+{
+}
+impl<A: Algorithm<State = ReachabilityState, Output = GraphColoredVertices>> ReachabilityAlgorithm
+    for A
+{
+}
 
 /// A type alias for the recommended forward reachability configuration using saturation.
 pub type ForwardReachability = Reachability<SaturationSuccessors>;
