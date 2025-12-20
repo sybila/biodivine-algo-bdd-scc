@@ -18,58 +18,61 @@ use cancel_this::Cancellable;
 // ========== Tests for reach_forward_naive ==========
 
 #[test]
-fn test_reach_forward_from_empty_set() {
+fn test_reach_forward_from_empty_set() -> Cancellable<()> {
     let graph = create_test_network();
     let empty = graph.mk_empty_colored_vertices();
 
     let state = ReachabilityState::initial(graph, empty);
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     assert!(
         result.is_empty(),
         "Forward reach from empty set should be empty"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_from_fixed_point() {
+fn test_reach_forward_from_fixed_point() -> Cancellable<()> {
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
 
     let state = ReachabilityState::initial(graph, s000.clone());
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     // A fixed point can only reach itself
     assert_eq!(
         result, s000,
         "Forward reach from fixed point 000 should be just {{000}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_from_attractor_2() {
+fn test_reach_forward_from_attractor_2() -> Cancellable<()> {
     let graph = create_test_network();
     let s110 = mk_state(&graph, S110);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph, s110.clone());
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     // From 110, we can reach 111 (and back), so we reach the whole attractor
     assert_eq!(
         result, attractor_2,
         "Forward reach from 110 should be {{110, 111}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_from_strong_basin_of_attractor_1() {
+fn test_reach_forward_from_strong_basin_of_attractor_1() -> Cancellable<()> {
     let graph = create_test_network();
     let s001 = mk_state(&graph, S001);
     let s000 = mk_state(&graph, S000);
 
     let state = ReachabilityState::initial(graph, s001.clone());
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     // 001 → 000 (fixed point), so we reach {001, 000}
     let expected = s001.union(&s000);
@@ -77,16 +80,17 @@ fn test_reach_forward_from_strong_basin_of_attractor_1() {
         result, expected,
         "Forward reach from 001 should be {{000, 001}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_from_strong_basin_of_attractor_2() {
+fn test_reach_forward_from_strong_basin_of_attractor_2() -> Cancellable<()> {
     let graph = create_test_network();
     let s101 = mk_state(&graph, S101);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph, s101.clone());
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     // 101 → 111 → 110 → 111 ..., so we reach {101, 110, 111}
     let expected = s101.union(&attractor_2);
@@ -94,17 +98,18 @@ fn test_reach_forward_from_strong_basin_of_attractor_2() {
         result, expected,
         "Forward reach from 101 should be {{101, 110, 111}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_from_weak_basin_reaches_both_attractors() {
+fn test_reach_forward_from_weak_basin_reaches_both_attractors() -> Cancellable<()> {
     let graph = create_test_network();
     let s011 = mk_state(&graph, S011);
     let s000 = mk_state(&graph, S000);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph, s011.clone());
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     // 011 can reach both attractors:
     // - 011 → 010 → 000 (attractor 1)
@@ -117,17 +122,18 @@ fn test_reach_forward_from_weak_basin_reaches_both_attractors() {
         !result.intersect(&attractor_2).is_empty(),
         "Forward reach from 011 should include attractor 2 (110, 111)"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_from_weak_basin_100() {
+fn test_reach_forward_from_weak_basin_100() -> Cancellable<()> {
     let graph = create_test_network();
     let s100 = mk_state(&graph, S100);
     let s000 = mk_state(&graph, S000);
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph.clone(), s100.clone());
-    let result = ForwardReachabilityBFS::compute(state).unwrap();
+    let result = ForwardReachabilityBFS::compute(state)?;
 
     // 100 can reach both attractors:
     // - 100 → 000 (attractor 1)
@@ -142,48 +148,51 @@ fn test_reach_forward_from_weak_basin_100() {
     // Verify it reaches both attractors
     assert!(s000.is_subset(&result));
     assert!(attractor_2.is_subset(&result));
+    Ok(())
 }
 
 #[test]
-fn test_reach_forward_includes_initial() {
+fn test_reach_forward_includes_initial() -> Cancellable<()> {
     let graph = create_test_network();
 
     // For any starting set, forward reachability must include the initial set
     for state in ALL_STATES {
         let initial = mk_state(&graph, *state);
         let algo_state = ReachabilityState::initial(graph.clone(), initial.clone());
-        let result = ForwardReachabilityBFS::compute(algo_state).unwrap();
+        let result = ForwardReachabilityBFS::compute(algo_state)?;
         assert!(
             initial.is_subset(&result),
             "Forward reach from {:03b} must include the initial state",
             state
         );
     }
+    Ok(())
 }
 
 // ========== Tests for reach_backward_naive ==========
 
 #[test]
-fn test_reach_backward_from_empty_set() {
+fn test_reach_backward_from_empty_set() -> Cancellable<()> {
     let graph = create_test_network();
     let empty = graph.mk_empty_colored_vertices();
 
     let state = ReachabilityState::initial(graph, empty);
-    let result = BackwardReachabilityBFS::compute(state).unwrap();
+    let result = BackwardReachabilityBFS::compute(state)?;
 
     assert!(
         result.is_empty(),
         "Backward reach from empty set should be empty"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_backward_to_fixed_point() {
+fn test_reach_backward_to_fixed_point() -> Cancellable<()> {
     let graph = create_test_network();
     let s000 = mk_state(&graph, S000);
 
     let state = ReachabilityState::initial(graph.clone(), s000);
-    let result = BackwardReachabilityBFS::compute(state).unwrap();
+    let result = BackwardReachabilityBFS::compute(state)?;
 
     // States that can reach 000: {000, 001, 010, 011, 100}
     let expected = mk_states(&graph, CAN_REACH_ATTR1);
@@ -191,15 +200,16 @@ fn test_reach_backward_to_fixed_point() {
         result, expected,
         "Backward reach to 000 should be {{000, 001, 010, 011, 100}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_backward_to_attractor_2() {
+fn test_reach_backward_to_attractor_2() -> Cancellable<()> {
     let graph = create_test_network();
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
 
     let state = ReachabilityState::initial(graph.clone(), attractor_2.clone());
-    let result = BackwardReachabilityBFS::compute(state).unwrap();
+    let result = BackwardReachabilityBFS::compute(state)?;
 
     // States that can reach {110, 111}: {011, 100, 101, 110, 111}
     let expected = mk_states(&graph, CAN_REACH_ATTR2);
@@ -207,15 +217,16 @@ fn test_reach_backward_to_attractor_2() {
         result, expected,
         "Backward reach to attractor 2 should be {{011, 100, 101, 110, 111}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_backward_from_single_state_in_cycle() {
+fn test_reach_backward_from_single_state_in_cycle() -> Cancellable<()> {
     let graph = create_test_network();
     let s110 = mk_state(&graph, S110);
 
     let state = ReachabilityState::initial(graph.clone(), s110);
-    let result = BackwardReachabilityBFS::compute(state).unwrap();
+    let result = BackwardReachabilityBFS::compute(state)?;
 
     // Reaching just 110: 111 can reach 110 directly, then all states that can reach 111
     // Chain: 101 → 111 → 110, 100 → 110, 011 → 111 → 110
@@ -225,23 +236,25 @@ fn test_reach_backward_from_single_state_in_cycle() {
         result, expected,
         "Backward reach to 110 should be {{011, 100, 101, 110, 111}}"
     );
+    Ok(())
 }
 
 #[test]
-fn test_reach_backward_includes_initial() {
+fn test_reach_backward_includes_initial() -> Cancellable<()> {
     let graph = create_test_network();
 
     // For any starting set, backward reachability must include the initial set
     for state in ALL_STATES {
         let initial = mk_state(&graph, *state);
         let algo_state = ReachabilityState::initial(graph.clone(), initial.clone());
-        let result = BackwardReachabilityBFS::compute(algo_state).unwrap();
+        let result = BackwardReachabilityBFS::compute(algo_state)?;
         assert!(
             initial.is_subset(&result),
             "Backward reach to {:03b} must include the initial state",
             state
         );
     }
+    Ok(())
 }
 
 // ========== Integration / SCC-related tests ==========
