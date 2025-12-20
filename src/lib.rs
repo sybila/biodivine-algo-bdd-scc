@@ -10,6 +10,8 @@ mod trimming;
 mod reachability_utils;
 
 pub use reachability_utils::Reachability;
+mod algorithm_trait;
+pub use algorithm_trait::Algorithm;
 
 /// Assert that the given graph has no colors.
 fn assert_precondition_graph_not_colored(graph: &SymbolicAsyncGraph) {
