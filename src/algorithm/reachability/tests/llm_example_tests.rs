@@ -1,6 +1,6 @@
-//! Tests for reachability algorithms using the canonical test network.
+//! Tests for reachability algorithms using the example test network.
 //!
-//! See `test_network.rs` for the complete documentation of the test network structure.
+//! See `llm_example_network.rs` for the complete documentation of the test network structure.
 
 use super::llm_example_network::sets::{
     ALL_STATES, ATTRACTOR_1, ATTRACTOR_2, CAN_REACH_ATTR1, CAN_REACH_ATTR2, SOURCE_STATES,

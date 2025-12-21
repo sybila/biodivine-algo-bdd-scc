@@ -26,7 +26,7 @@ impl<S: StepOperator> Algorithm for Reachability<S> {
         let initial_state: ReachabilityState = initial_state.into();
         info!(
             "Initializing reachability (step function=`{}`; elements=`{}`; BDD nodes=`{}`).",
-            type_name::<S>().split("::").last().unwrap(),
+            type_name::<S>().split("::").last().unwrap_or("?"),
             initial_state.set.exact_cardinality(),
             initial_state.set.symbolic_size()
         );

@@ -47,7 +47,7 @@ pub type BackwardReachability = Reachability<SaturationPredecessors>;
 /// the graph in the BFS order.
 ///
 /// This means each step computes exactly one additional layer of vertices further
-/// from the initial set. Note that this is generally slower than [`ForwardReachability`]
+/// from the initial set. Note that this is generally slower than [`BackwardReachability`]
 /// because it tends to produce larger BDDs, but it is sometimes required exactly due to this
 /// specific order of computation.
 pub type BackwardReachabilityBFS = Reachability<AllPredecessors>;

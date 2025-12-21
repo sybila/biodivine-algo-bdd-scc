@@ -245,15 +245,15 @@ mod tests {
 
         // 110 should have exactly one successor: 111
         let post_110 = graph.post(&s110);
-        assert!(
-            post_110.is_subset(&s111) && s111.is_subset(&post_110),
+        assert_eq!(
+            post_110, s111,
             "State 110 should have exactly successor 111"
         );
 
         // 111 should have exactly one successor: 110
         let post_111 = graph.post(&s111);
-        assert!(
-            post_111.is_subset(&s110) && s110.is_subset(&post_111),
+        assert_eq!(
+            post_111, s110,
             "State 111 should have exactly successor 110"
         );
     }
@@ -280,11 +280,10 @@ mod tests {
             let post = graph.post(&s);
             let expected_set = mk_states(&graph, expected);
 
-            assert!(
-                post.is_subset(&expected_set) && expected_set.is_subset(&post),
+            assert_eq!(
+                post, expected_set,
                 "State {:03b} should have successors {:?}, but got different result",
-                state,
-                expected
+                state, expected
             );
         }
     }

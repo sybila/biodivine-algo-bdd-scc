@@ -1,5 +1,6 @@
 use biodivine_lib_param_bn::VariableId;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use std::collections::BTreeSet;
 
 /// An internal object used across various reachability algorithms to represent
 /// algorithm state and configuration.
@@ -9,8 +10,8 @@ use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, Symboli
 pub struct ReachabilityState {
     /// The graph that encodes all system transitions.
     pub graph: SymbolicAsyncGraph,
-    /// The *sorted list* of variables that are allowed to be updated.
-    pub variables: Vec<VariableId>,
+    /// The *sorted set* of variables that are allowed to be updated.
+    pub variables: BTreeSet<VariableId>,
     /// Current set of reachable states.
     pub set: GraphColoredVertices,
 }
@@ -39,10 +40,10 @@ impl ReachabilityState {
     ///
     /// The method will panic if you submit a variable ID that is not valid in the current graph.
     pub fn restrict_variables(mut self, variables: &[VariableId]) -> Self {
-        let mut variables = variables.to_vec();
-        variables.sort();
+        let variables = BTreeSet::from_iter(variables.iter().copied());
 
-        // Check that all variables are valid in this graph:
+        // Check that all variables are valid in this graph. Using the maximal variable
+        // is sufficient because valid variables are always a continuous range.
         if let Some(last) = variables.last() {
             assert!(last.to_index() < self.graph.num_vars());
         }
