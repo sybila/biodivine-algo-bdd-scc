@@ -1,10 +1,10 @@
-use std::any::type_name;
-use biodivine_lib_param_bn::biodivine_std::traits::Set;
-use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
-use cancel_this::{is_cancelled, Cancellable};
-use log::{info, trace};
 use crate::Algorithm;
 use crate::algorithm::reachability::{Reachability, ReachabilityState, StepOperator};
+use biodivine_lib_param_bn::biodivine_std::traits::Set;
+use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
+use cancel_this::{Cancellable, is_cancelled};
+use log::{info, trace};
+use std::any::type_name;
 
 #[cfg(test)]
 mod tests;
@@ -66,7 +66,6 @@ impl<S: StepOperator> Algorithm for Trimming<S> {
         })
     }
 }
-
 
 /// [`RelativeSources`] is a special [`StepOperator`] intended for extending the initial set with
 /// trivial "connecting components" from the remaining set of states.
