@@ -5,6 +5,11 @@ pub mod fwd_bwd;
 mod hamming;
 mod trimming;
 
+pub mod algorithm;
+
+mod algorithm_trait;
+pub use algorithm_trait::Algorithm;
+
 /// Assert that the given graph has no colors.
 fn assert_precondition_graph_not_colored(graph: &SymbolicAsyncGraph) {
     assert_eq!(

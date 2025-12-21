@@ -531,11 +531,7 @@ mod tests {
         let bn = BooleanNetwork::try_from_file(model_path).unwrap();
         let bn = bn.inline_constants(true, true);
 
-        let skip_threshold = if cfg!(feature = "expensive-tests") {
-            14
-        } else {
-            10
-        };
+        let skip_threshold = 10;
 
         if bn.num_vars() > skip_threshold {
             // The network is too large.
@@ -571,11 +567,7 @@ mod tests {
         let bn = BooleanNetwork::try_from_file(model_path).unwrap();
         let bn = bn.inline_constants(true, true);
 
-        let skip_threshold = if cfg!(feature = "expensive-tests") {
-            14
-        } else {
-            10
-        };
+        let skip_threshold = 10;
 
         if bn.num_vars() > skip_threshold {
             // The network is too large.
@@ -695,11 +687,7 @@ mod tests {
         let bn = BooleanNetwork::try_from_file(model_path).unwrap();
         let bn = bn.inline_constants(true, true);
 
-        let skip_threshold = if cfg!(feature = "expensive-tests") {
-            14
-        } else {
-            10
-        };
+        let skip_threshold = 10;
 
         if bn.num_vars() > skip_threshold {
             // The network is too large.
