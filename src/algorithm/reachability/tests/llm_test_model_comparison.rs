@@ -30,6 +30,14 @@ where
     // Load the model
     let bn = BooleanNetwork::try_from_file(model_path)
         .unwrap_or_else(|e| panic!("Failed to load model {}: {:?}", model_path, e));
+
+    // Empirical testing shows that on current hardware, all networks above 20 variables will
+    // exceed the 1s timeout. We can increase this in the future if it becomes relevant, but
+    // for now it saves quite a lot of runtime when testing.
+    if bn.num_vars() > 20 {
+        return Ok(());
+    }
+
     let graph = SymbolicAsyncGraph::new(&bn)
         .unwrap_or_else(|e| panic!("Failed to create graph from {}: {:?}", model_path, e));
 
