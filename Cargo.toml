@@ -11,8 +11,8 @@ cancel-this = "0.3"
 log = "0.4"
 
 [dev-dependencies]
-test-generator = "0.3.1"
-env_logger = "*"
+test-generator = "0.3"
+env_logger = "0.11"
 
 [profile.test]
 # Required to parse some larger models during testing.
