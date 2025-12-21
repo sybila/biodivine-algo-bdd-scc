@@ -8,6 +8,9 @@ use cancel_this::Cancellable;
 use log::info;
 use std::any::type_name;
 
+#[cfg(test)]
+mod tests;
+
 /// Computes the greatest forward trapped subset of the initial set. That is, a subset of states
 /// that cannot reach anything outside the original state.
 ///
