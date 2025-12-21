@@ -17,7 +17,7 @@ mod tests;
 /// Internally, the algorithm translates the problem into
 /// [`crate::algorithm::reachability::BackwardReachability`]. This is only a type alias,
 /// meaning you can use any other backward reachability procedure instead
-/// (e.g. [`crate::algorithm::reachability::BackwardReachabilityBFS`]).
+/// (e.g. [`crate::algorithm::reachability::BackwardReachabilityBfs`]).
 pub type TrappingForward = Trapping<SaturationPredecessors>;
 
 /// Computes the greatest backward trapped subset of the initial set. That is, a subset of states
@@ -26,7 +26,7 @@ pub type TrappingForward = Trapping<SaturationPredecessors>;
 /// Internally, the algorithm translates the problem into
 /// [`crate::algorithm::reachability::ForwardReachability`]. This is only a type alias,
 /// meaning you can use any other forward reachability procedure instead
-/// (e.g. [`crate::algorithm::reachability::ForwardReachabilityBFS`]).
+/// (e.g. [`crate::algorithm::reachability::ForwardReachabilityBfs`]).
 pub type TrappingBackward = Trapping<SaturationSuccessors>;
 
 /// Trapping is a helper algorithm that computes a forward/backward trap set by translating

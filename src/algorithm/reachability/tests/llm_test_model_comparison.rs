@@ -5,7 +5,7 @@
 //! the same results, while also testing with timeouts to ensure tests don't hang.
 
 use crate::algorithm::reachability::{
-    BackwardReachability, BackwardReachabilityBFS, ForwardReachability, ForwardReachabilityBFS,
+    BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
     ReachabilityAlgorithm,
 };
 use biodivine_lib_param_bn::BooleanNetwork;
@@ -79,7 +79,7 @@ where
 fn test_forward_reachability_comparison(model_path: &str) {
     let one_second = Duration::from_secs(1);
     match cancel_this::on_timeout(one_second, || {
-        test_reachability_comparison_impl::<ForwardReachability, ForwardReachabilityBFS>(model_path)
+        test_reachability_comparison_impl::<ForwardReachability, ForwardReachabilityBfs>(model_path)
     }) {
         Ok(()) => {}
         Err(_) => {
@@ -96,7 +96,7 @@ fn test_forward_reachability_comparison(model_path: &str) {
 fn test_backward_reachability_comparison(model_path: &str) {
     let one_second = Duration::from_secs(1);
     match cancel_this::on_timeout(one_second, || {
-        test_reachability_comparison_impl::<BackwardReachability, BackwardReachabilityBFS>(
+        test_reachability_comparison_impl::<BackwardReachability, BackwardReachabilityBfs>(
             model_path,
         )
     }) {

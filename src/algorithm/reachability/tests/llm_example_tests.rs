@@ -3,7 +3,7 @@
 //! See `llm_example_network.rs` for the complete documentation of the test network structure.
 
 use crate::algorithm::reachability::{
-    BackwardReachability, BackwardReachabilityBFS, ForwardReachability, ForwardReachabilityBFS,
+    BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
     ReachabilityAlgorithm,
 };
 use crate::algorithm::test_utils::llm_example_network::sets::{
@@ -412,52 +412,52 @@ where
 
 #[test]
 fn test_reach_forward_from_empty_set_bfs() -> Cancellable<()> {
-    test_reach_forward_from_empty_set_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_empty_set_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_from_fixed_point_bfs() -> Cancellable<()> {
-    test_reach_forward_from_fixed_point_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_fixed_point_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_from_attractor_2_bfs() -> Cancellable<()> {
-    test_reach_forward_from_attractor_2_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_attractor_2_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_from_strong_basin_of_attractor_1_bfs() -> Cancellable<()> {
-    test_reach_forward_from_strong_basin_of_attractor_1_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_strong_basin_of_attractor_1_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_from_strong_basin_of_attractor_2_bfs() -> Cancellable<()> {
-    test_reach_forward_from_strong_basin_of_attractor_2_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_strong_basin_of_attractor_2_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_from_weak_basin_reaches_both_attractors_bfs() -> Cancellable<()> {
-    test_reach_forward_from_weak_basin_reaches_both_attractors_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_weak_basin_reaches_both_attractors_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_from_weak_basin_100_bfs() -> Cancellable<()> {
-    test_reach_forward_from_weak_basin_100_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_from_weak_basin_100_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_forward_includes_initial_bfs() -> Cancellable<()> {
-    test_reach_forward_includes_initial_impl::<ForwardReachabilityBFS>()
+    test_reach_forward_includes_initial_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_basin_separation_bfs() -> Cancellable<()> {
-    test_basin_separation_impl::<ForwardReachabilityBFS>()
+    test_basin_separation_impl::<ForwardReachabilityBfs>()
 }
 
 #[test]
 fn test_forward_reach_from_sources_covers_everything_bfs() -> Cancellable<()> {
-    test_forward_reach_from_sources_covers_everything_impl::<ForwardReachabilityBFS>()
+    test_forward_reach_from_sources_covers_everything_impl::<ForwardReachabilityBfs>()
 }
 
 // ========== Tests for saturation forward algorithms ==========
@@ -516,27 +516,27 @@ fn test_forward_reach_from_sources_covers_everything_sat() -> Cancellable<()> {
 
 #[test]
 fn test_reach_backward_from_empty_set_bfs() -> Cancellable<()> {
-    test_reach_backward_from_empty_set_impl::<BackwardReachabilityBFS>()
+    test_reach_backward_from_empty_set_impl::<BackwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_backward_to_fixed_point_bfs() -> Cancellable<()> {
-    test_reach_backward_to_fixed_point_impl::<BackwardReachabilityBFS>()
+    test_reach_backward_to_fixed_point_impl::<BackwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_backward_to_attractor_2_bfs() -> Cancellable<()> {
-    test_reach_backward_to_attractor_2_impl::<BackwardReachabilityBFS>()
+    test_reach_backward_to_attractor_2_impl::<BackwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_backward_from_single_state_in_cycle_bfs() -> Cancellable<()> {
-    test_reach_backward_from_single_state_in_cycle_impl::<BackwardReachabilityBFS>()
+    test_reach_backward_from_single_state_in_cycle_impl::<BackwardReachabilityBfs>()
 }
 
 #[test]
 fn test_reach_backward_includes_initial_bfs() -> Cancellable<()> {
-    test_reach_backward_includes_initial_impl::<BackwardReachabilityBFS>()
+    test_reach_backward_includes_initial_impl::<BackwardReachabilityBfs>()
 }
 
 // ========== Tests for saturation backward algorithms ==========
@@ -570,7 +570,7 @@ fn test_reach_backward_includes_initial_sat() -> Cancellable<()> {
 
 #[test]
 fn test_scc_via_forward_backward_intersection_bfs_bfs() -> Cancellable<()> {
-    test_scc_via_forward_backward_intersection_impl::<ForwardReachabilityBFS, BackwardReachabilityBFS>(
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachabilityBfs, BackwardReachabilityBfs>(
     )
 }
 
@@ -581,12 +581,12 @@ fn test_scc_via_forward_backward_intersection_sat_sat() -> Cancellable<()> {
 
 #[test]
 fn test_scc_via_forward_backward_intersection_bfs_sat() -> Cancellable<()> {
-    test_scc_via_forward_backward_intersection_impl::<ForwardReachabilityBFS, BackwardReachability>(
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachabilityBfs, BackwardReachability>(
     )
 }
 
 #[test]
 fn test_scc_via_forward_backward_intersection_sat_bfs() -> Cancellable<()> {
-    test_scc_via_forward_backward_intersection_impl::<ForwardReachability, BackwardReachabilityBFS>(
+    test_scc_via_forward_backward_intersection_impl::<ForwardReachability, BackwardReachabilityBfs>(
     )
 }

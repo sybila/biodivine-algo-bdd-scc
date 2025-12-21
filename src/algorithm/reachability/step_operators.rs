@@ -6,11 +6,11 @@ use log::trace;
 
 /// Computes the direct successors of the current reachable set, excluding values that are already
 /// in the reachable set.
-pub struct AllSuccessors;
+pub struct BfsSuccessors;
 
 /// Computes the direct predecessors of the current reachable set, excluding values that are
 /// already in the reachable set.
-pub struct AllPredecessors;
+pub struct BfsPredecessors;
 
 /// Find the greatest variable which admits successors (excluding current reachable values) in
 /// the current reachable set and return those successors (or empty set otherwise).
@@ -20,7 +20,7 @@ pub struct SaturationSuccessors;
 /// the current reachable set and return those predecessors (or empty set otherwise).
 pub struct SaturationPredecessors;
 
-impl StepOperator for AllSuccessors {
+impl StepOperator for BfsSuccessors {
     fn step(state: &ReachabilityState) -> Cancellable<GraphColoredVertices> {
         let mut successors = state.graph.mk_empty_colored_vertices();
         for var in state.variables.iter().rev() {
@@ -40,7 +40,7 @@ impl StepOperator for AllSuccessors {
     }
 }
 
-impl StepOperator for AllPredecessors {
+impl StepOperator for BfsPredecessors {
     fn step(state: &ReachabilityState) -> Cancellable<GraphColoredVertices> {
         let mut predecessors = state.graph.mk_empty_colored_vertices();
         for var in state.variables.iter().rev() {
