@@ -7,6 +7,7 @@ mod trimming;
 
 pub mod algorithm;
 
+pub mod algorithm_2;
 pub mod algorithm_trait_2;
 
 mod algorithm_trait;
