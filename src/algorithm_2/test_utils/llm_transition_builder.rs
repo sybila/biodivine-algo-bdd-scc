@@ -397,40 +397,15 @@ pub fn from_transitions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algorithm_2::test_utils::mk_state;
     use biodivine_lib_param_bn::biodivine_std::traits::Set;
     use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
-
-    /// Helper function to create a singleton state from a state number.
-    /// The state number is interpreted as binary encoding (most significant bit = variable 0).
-    fn mk_state(
-        graph: &SymbolicAsyncGraph,
-        state: u32,
-        num_vars: usize,
-    ) -> biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices {
-        let vars: Vec<_> = graph.variables().collect();
-        assert_eq!(vars.len(), num_vars);
-        assert!(
-            state < (1u32 << num_vars),
-            "State {} out of range for {} variables",
-            state,
-            num_vars
-        );
-
-        let mut assignments = Vec::new();
-        for i in 0..num_vars {
-            let shift = num_vars - 1 - i;
-            let value = (state >> shift) & 1 == 1;
-            assignments.push((vars[i], value));
-        }
-
-        graph.mk_subspace(&assignments)
-    }
 
     /// Verify that all declared transitions exist in the graph.
     fn verify_transitions(graph: &SymbolicAsyncGraph, transitions: &[Transition], num_vars: usize) {
         for &(from_state, to_state) in transitions {
-            let from = mk_state(graph, from_state, num_vars);
-            let to = mk_state(graph, to_state, num_vars);
+            let from = mk_state(graph, from_state);
+            let to = mk_state(graph, to_state);
 
             let successors = graph.post(&from);
 
@@ -457,7 +432,7 @@ mod tests {
         // Iterate over all possible states and check if they're in the set
         let max_state = (1u32 << num_vars) - 1;
         for state in 0..=max_state {
-            let state_set = mk_state(graph, state, num_vars);
+            let state_set = mk_state(graph, state);
             if !state_set.intersect(set).is_empty() {
                 states.push(state);
             }
@@ -487,7 +462,7 @@ mod tests {
 
         // Check each state that should have transitions
         for &from_state in &states_with_transitions {
-            let from = mk_state(graph, from_state, num_vars);
+            let from = mk_state(graph, from_state);
             let successors = graph.post(&from);
             let actual_successors: HashSet<u32> =
                 collect_state_numbers(graph, &successors, num_vars)
@@ -532,7 +507,7 @@ mod tests {
 
         // Then verify all states have the correct transitions
         for state in 0..=max_state {
-            let from = mk_state(graph, state, num_vars);
+            let from = mk_state(graph, state);
             let successors = graph.post(&from);
 
             if states_with_transitions.contains(&state) {
@@ -625,7 +600,7 @@ mod tests {
         verify_exact_transitions(&graph, &transitions, 2);
 
         // Specifically, verify that state 00 is a fixed point
-        let s00 = mk_state(&graph, 0b00, 2);
+        let s00 = mk_state(&graph, 0b00);
         let successors = graph.post(&s00);
         assert!(successors.is_empty(), "State 00 should be a fixed point");
     }

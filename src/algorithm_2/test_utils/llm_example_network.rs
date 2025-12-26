@@ -86,7 +86,7 @@
 //! - To `111`: from `{111, 110, 101, 011, 100}` (same as 110, since they form a cycle)
 
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
-use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 
 use super::llm_transition_builder::from_transitions;
 
@@ -122,51 +122,24 @@ pub fn variable_order(graph: &SymbolicAsyncGraph) -> Vec<biodivine_lib_param_bn:
     graph.variables().collect()
 }
 
-/// Creates a singleton state from a binary representation (0-7).
-///
-/// The state number corresponds to the binary encoding x0*4 + x1*2 + x2*1.
-/// For example:
-/// - `mk_state(graph, 0)` creates state `000`
-/// - `mk_state(graph, 5)` creates state `101`
-/// - `mk_state(graph, 7)` creates state `111`
-pub fn mk_state(graph: &SymbolicAsyncGraph, state: u8) -> GraphColoredVertices {
-    assert!(state < 8, "State must be in range 0-7");
-    let vars = variable_order(graph);
-    let x0 = (state >> 2) & 1 == 1;
-    let x1 = (state >> 1) & 1 == 1;
-    let x2 = state & 1 == 1;
-    graph.mk_subspace(&[(vars[0], x0), (vars[1], x1), (vars[2], x2)])
-}
-
-/// Creates a set of states from a list of binary representations.
-///
-/// For example, `mk_states(graph, &[0, 5, 7])` creates the set `{000, 101, 111}`.
-pub fn mk_states(graph: &SymbolicAsyncGraph, states: &[u8]) -> GraphColoredVertices {
-    let mut result = graph.mk_empty_colored_vertices();
-    for &s in states {
-        result = result.union(&mk_state(graph, s));
-    }
-    result
-}
-
 /// State constants for readability in tests.
 pub mod states {
     /// State `000` - Fixed point, Attractor 1.
-    pub const S000: u8 = 0b000;
+    pub const S000: u32 = 0b000;
     /// State `001` - Strong basin of Attractor 1.
-    pub const S001: u8 = 0b001;
+    pub const S001: u32 = 0b001;
     /// State `010` - Strong basin of Attractor 1.
-    pub const S010: u8 = 0b010;
+    pub const S010: u32 = 0b010;
     /// State `011` - Weak basin (can reach both attractors), SOURCE (no predecessors).
-    pub const S011: u8 = 0b011;
+    pub const S011: u32 = 0b011;
     /// State `100` - Weak basin (can reach both attractors), SOURCE (no predecessors).
-    pub const S100: u8 = 0b100;
+    pub const S100: u32 = 0b100;
     /// State `101` - Strong basin of Attractor 2, SOURCE (no predecessors).
-    pub const S101: u8 = 0b101;
+    pub const S101: u32 = 0b101;
     /// State `110` - Part of Attractor 2 (non-trivial SCC).
-    pub const S110: u8 = 0b110;
+    pub const S110: u32 = 0b110;
     /// State `111` - Part of Attractor 2 (non-trivial SCC).
-    pub const S111: u8 = 0b111;
+    pub const S111: u32 = 0b111;
 }
 
 /// Predefined sets for common test scenarios.
@@ -174,37 +147,38 @@ pub mod sets {
     use super::states::*;
 
     /// Attractor 1: the fixed point `{000}`.
-    pub const ATTRACTOR_1: &[u8] = &[S000];
+    pub const ATTRACTOR_1: &[u32] = &[S000];
 
     /// Attractor 2: the cycle `{110, 111}`.
-    pub const ATTRACTOR_2: &[u8] = &[S110, S111];
+    pub const ATTRACTOR_2: &[u32] = &[S110, S111];
 
     /// Strong basin of Attractor 1 (excluding the attractor itself): `{001, 010}`.
-    pub const STRONG_BASIN_ATTR1: &[u8] = &[S001, S010];
+    pub const STRONG_BASIN_ATTR1: &[u32] = &[S001, S010];
 
     /// Strong basin of Attractor 2 (excluding the attractor itself): `{101}`.
-    pub const STRONG_BASIN_ATTR2: &[u8] = &[S101];
+    pub const STRONG_BASIN_ATTR2: &[u32] = &[S101];
 
     /// Weak basin (can reach both attractors): `{011, 100}`.
-    pub const WEAK_BASIN: &[u8] = &[S011, S100];
+    pub const WEAK_BASIN: &[u32] = &[S011, S100];
 
     /// Source states (no predecessors): `{011, 100, 101}`.
-    pub const SOURCE_STATES: &[u8] = &[S011, S100, S101];
+    pub const SOURCE_STATES: &[u32] = &[S011, S100, S101];
 
     /// All states that can reach Attractor 1: `{000, 001, 010, 011, 100}`.
-    pub const CAN_REACH_ATTR1: &[u8] = &[S000, S001, S010, S011, S100];
+    pub const CAN_REACH_ATTR1: &[u32] = &[S000, S001, S010, S011, S100];
 
     /// All states that can reach Attractor 2: `{011, 100, 101, 110, 111}`.
-    pub const CAN_REACH_ATTR2: &[u8] = &[S011, S100, S101, S110, S111];
+    pub const CAN_REACH_ATTR2: &[u32] = &[S011, S100, S101, S110, S111];
 
     /// All 8 states in the network.
-    pub const ALL_STATES: &[u8] = &[S000, S001, S010, S011, S100, S101, S110, S111];
+    pub const ALL_STATES: &[u32] = &[S000, S001, S010, S011, S100, S101, S110, S111];
 }
 
 #[cfg(test)]
 mod tests {
     use super::states::*;
     use super::*;
+    use crate::algorithm_2::test_utils::{mk_state, mk_states};
 
     /// Verify that the test network has exactly 8 states (no parameters).
     #[test]
@@ -255,7 +229,7 @@ mod tests {
         let graph = create_test_network();
 
         // Expected successors for each state (as documented)
-        let expected_successors: [(u8, &[u8]); 8] = [
+        let expected_successors: [(u32, &[u32]); 8] = [
             (S000, &[]),                 // Fixed point
             (S001, &[S000]),             // → 000
             (S010, &[S000]),             // → 000
