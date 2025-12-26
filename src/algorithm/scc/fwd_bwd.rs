@@ -1,5 +1,6 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
+use crate::algorithm::scc::SccConfig;
 use crate::algorithm_trait::Incomplete::Working;
 use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
@@ -25,11 +26,11 @@ pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
 
 impl FwdBwdIterationState {
     fn new<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
-        graph: &SymbolicAsyncGraph,
+        context: &SccConfig,
         value: GraphColoredVertices,
     ) -> Self {
         let pivot = value.pick_vertex();
-        let graph = graph.restrict(&value);
+        let graph = context.graph.restrict(&value);
         FwdBwdIterationState {
             forward: FWD::configure_dyn(graph.clone(), pivot.clone()),
             backward: BWD::configure_dyn(graph.clone(), pivot.clone()),
@@ -48,10 +49,10 @@ impl From<&SymbolicAsyncGraph> for FwdBwdState {
 }
 
 impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
-    GeneratorStep<SymbolicAsyncGraph, FwdBwdState, GraphColoredVertices> for FwdBwdStep<FWD, BWD>
+    GeneratorStep<SccConfig, FwdBwdState, GraphColoredVertices> for FwdBwdStep<FWD, BWD>
 {
     fn step(
-        context: &SymbolicAsyncGraph,
+        context: &SccConfig,
         state: &mut FwdBwdState,
     ) -> Completable<Option<GraphColoredVertices>> {
         if let Some(iteration) = state.computing.as_mut() {

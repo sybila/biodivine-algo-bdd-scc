@@ -1,4 +1,5 @@
 mod fwd_bwd;
+mod scc_config;
 
 #[cfg(test)]
 mod llm_tests;
@@ -7,17 +8,19 @@ use crate::algorithm::reachability::{
     BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
 };
 use crate::algorithm_trait::{GenAlgorithm, Generator};
-use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
+
 pub use fwd_bwd::{FwdBwdIterationState, FwdBwdState, FwdBwdStep};
+pub use scc_config::SccConfig;
 
 /// A helper trait which allows us to use [`SccAlgorithm`] as shorthand for
 /// `GenAlgorithm<Context = SymbolicAsyncGraph, Output = GraphColoredVertices>`.
 pub trait SccAlgorithm<STATE>:
-    GenAlgorithm<SymbolicAsyncGraph, STATE, GraphColoredVertices> + 'static
+    GenAlgorithm<SccConfig, STATE, GraphColoredVertices> + 'static
 {
 }
-impl<STATE, T: GenAlgorithm<SymbolicAsyncGraph, STATE, GraphColoredVertices> + 'static>
-    SccAlgorithm<STATE> for T
+impl<STATE, T: GenAlgorithm<SccConfig, STATE, GraphColoredVertices> + 'static> SccAlgorithm<STATE>
+    for T
 {
 }
 
@@ -30,7 +33,7 @@ impl<STATE, T: GenAlgorithm<SymbolicAsyncGraph, STATE, GraphColoredVertices> + '
 ///  - Recursively continue in `FWD \ SCC`, `BWD \ SCC` and `ALL \ FWD \ BWD`.
 ///  - As with all other SCC algorithms here, only non-trivial SCCs are returned.
 pub type FwdBwdScc = Generator<
-    SymbolicAsyncGraph,
+    SccConfig,
     FwdBwdState,
     GraphColoredVertices,
     FwdBwdStep<ForwardReachability, BackwardReachability>,
@@ -39,7 +42,7 @@ pub type FwdBwdScc = Generator<
 /// Variant of [`FwdBwdScc`] that uses BFS reachability. This is not really necessary and is
 /// mostly just for benchmark comparisons.
 pub type FwdBwdSccBfs = Generator<
-    SymbolicAsyncGraph,
+    SccConfig,
     FwdBwdState,
     GraphColoredVertices,
     FwdBwdStep<ForwardReachabilityBfs, BackwardReachabilityBfs>,
