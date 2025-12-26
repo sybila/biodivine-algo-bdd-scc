@@ -1,4 +1,4 @@
-use crate::algorithm_trait_2::{Algorithm, Completable, Computable, Incomplete};
+use crate::algorithm_trait::{Algorithm, Completable, Computable, Incomplete};
 use cancel_this::{Cancellable, is_cancelled};
 use std::marker::PhantomData;
 

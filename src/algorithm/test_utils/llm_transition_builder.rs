@@ -17,7 +17,7 @@
 //!
 //! ```rust
 //! use biodivine_lib_param_bn::BooleanNetwork;
-//! use biodivine_lib_algo_scc::algorithm_2::test_utils::llm_transition_builder::from_transitions;
+//! use biodivine_lib_algo_scc::algorithm::test_utils::llm_transition_builder::from_transitions;
 //!
 //! // Define transitions for a 2-variable network:
 //! // 00 → 10 (variable 0 flips to 1)
@@ -250,7 +250,7 @@ fn find_variables_in_dnf(function_true_states: &HashSet<u32>, num_vars: usize) -
 ///
 /// ```rust
 /// use biodivine_lib_param_bn::BooleanNetwork;
-/// use biodivine_lib_algo_scc::algorithm_2::test_utils::llm_transition_builder::from_transitions;
+/// use biodivine_lib_algo_scc::algorithm::test_utils::llm_transition_builder::from_transitions;
 ///
 /// // Create a simple 2-variable cycle: 00 → 10 → 11 → 01 → 00
 /// let transitions = vec![
@@ -397,7 +397,7 @@ pub fn from_transitions(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::algorithm_2::test_utils::mk_state;
+    use crate::algorithm::test_utils::mk_state;
     use biodivine_lib_param_bn::biodivine_std::traits::Set;
     use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 

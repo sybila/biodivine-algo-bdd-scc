@@ -3,14 +3,14 @@ mod fwd_bwd;
 #[cfg(test)]
 mod llm_tests;
 
-use crate::algorithm_2::reachability::{
+use crate::algorithm::reachability::{
     BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
 };
-use crate::algorithm_trait_2::{GenAlgorithm, Generator};
+use crate::algorithm_trait::{GenAlgorithm, Generator};
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 pub use fwd_bwd::{FwdBwdIterationState, FwdBwdState, FwdBwdStep};
 
-/// A helper trait which allows us to use [`crate::algorithm_2::reachability::ReachabilityAlgorithm`] as shorthand for
+/// A helper trait which allows us to use [`crate::algorithm::reachability::ReachabilityAlgorithm`] as shorthand for
 /// `Algorithm<Context = ReachabilityConfig, State = GraphColoredVertices>`.
 pub trait SccGenAlgorithm<STATE>:
     GenAlgorithm<SymbolicAsyncGraph, STATE, GraphColoredVertices> + 'static

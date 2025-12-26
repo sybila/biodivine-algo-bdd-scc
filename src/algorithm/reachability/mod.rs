@@ -1,4 +1,4 @@
-use crate::algorithm_trait_2::{Algorithm, Computation};
+use crate::algorithm_trait::{Algorithm, Computation};
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::Cancellable;
 

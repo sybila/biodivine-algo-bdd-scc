@@ -4,11 +4,11 @@
 //! These tests verify that saturation-based and BFS-based algorithms produce
 //! the same results, while also testing with timeouts to ensure tests don't hang.
 
-use crate::algorithm_2::reachability::{
+use crate::algorithm::reachability::{
     BfsPredecessors, BfsSuccessors, IterativeUnion, ReachabilityComputation, ReachabilityConfig,
     SaturationPredecessors, SaturationSuccessors,
 };
-use crate::algorithm_trait_2::ComputationStep;
+use crate::algorithm_trait::ComputationStep;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};

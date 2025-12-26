@@ -1,4 +1,4 @@
-use crate::algorithm_trait_2::{
+use crate::algorithm_trait::{
     Completable, Computation, ComputationStepAndConvert, GenAlgorithm, Generatable, Incomplete,
     Manual,
 };

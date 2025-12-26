@@ -1,7 +1,7 @@
-use crate::algorithm_2::reachability::{ReachabilityConfig, ReachabilityStep};
-use crate::algorithm_2::{log_set, simple_type_name};
-use crate::algorithm_trait_2::Incomplete::Working;
-use crate::algorithm_trait_2::{Completable, ComputationStep};
+use crate::algorithm::reachability::{ReachabilityConfig, ReachabilityStep};
+use crate::algorithm::{log_set, simple_type_name};
+use crate::algorithm_trait::Incomplete::Working;
+use crate::algorithm_trait::{Completable, ComputationStep};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use log::{debug, info};

@@ -16,7 +16,7 @@
 //!
 //! ```rust
 //! # use cancel_this::Cancellable;
-//! # use biodivine_lib_algo_scc::algorithm_trait_2::{Completable, ComputationStep, Incomplete, Computation, Derived};
+//! # use biodivine_lib_algo_scc::algorithm_trait::{Completable, ComputationStep, Incomplete, Computation, Derived};
 //! struct Counter;
 //!
 //! impl ComputationStep<usize, usize, usize> for Counter {
@@ -180,7 +180,7 @@ impl std::error::Error for Incomplete {}
 
 #[cfg(test)]
 mod tests {
-    use crate::algorithm_trait_2::{
+    use crate::algorithm_trait::{
         Completable, Computation, ComputationStep, Generator, GeneratorStep, Incomplete,
     };
 

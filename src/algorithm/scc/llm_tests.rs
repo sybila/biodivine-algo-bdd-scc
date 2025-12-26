@@ -3,12 +3,12 @@
 //! These tests verify that the algorithm correctly identifies all non-trivial SCCs
 //! (SCCs with more than one state) and that no extra SCCs are reported.
 
-use crate::algorithm_2::scc::FwdBwdScc;
-use crate::algorithm_2::test_utils::llm_example_network::create_test_network;
-use crate::algorithm_2::test_utils::llm_example_network::sets::ATTRACTOR_2;
-use crate::algorithm_2::test_utils::llm_transition_builder::from_transitions;
-use crate::algorithm_2::test_utils::mk_state;
-use crate::algorithm_2::test_utils::{init_logger, mk_states};
+use crate::algorithm::scc::FwdBwdScc;
+use crate::algorithm::test_utils::llm_example_network::create_test_network;
+use crate::algorithm::test_utils::llm_example_network::sets::ATTRACTOR_2;
+use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
+use crate::algorithm::test_utils::mk_state;
+use crate::algorithm::test_utils::{init_logger, mk_states};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use std::collections::HashSet;
