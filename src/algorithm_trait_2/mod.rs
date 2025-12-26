@@ -93,7 +93,7 @@
 //!  - `CONTEXT` provides a way to "configure" the algorithm. If your algorithm does not need
 //!    any configuration, you can use `()` as `CONTEXT`.
 
-use cancel_this::Cancelled;
+use cancel_this::{Cancellable, Cancelled};
 use std::fmt::{Display, Formatter};
 
 mod computation;
@@ -101,6 +101,51 @@ mod generator;
 
 pub use computation::{Computation, ComputationStep, ComputationStepAndConvert, Derived, Manual};
 pub use generator::{CollectorStep, Generator, GeneratorStep};
+
+pub trait Algorithm<CONTEXT, STATE, OUTPUT>: Computable<OUTPUT> {
+    fn configure<I1: Into<CONTEXT>, I2: Into<STATE>>(context: I1, initial_state: I2) -> Self
+    where
+        Self: Sized;
+
+    fn configure_dyn<I1: Into<CONTEXT>, I2: Into<STATE>>(
+        context: I1,
+        initial_state: I2,
+    ) -> DynAlgorithm<CONTEXT, STATE, OUTPUT>
+    where
+        Self: Sized + 'static,
+    {
+        Box::new(Self::configure(context, initial_state))
+    }
+}
+
+pub trait GenAlgorithm<CONTEXT, STATE, OUTPUT>: Generatable<OUTPUT> {
+    fn configure<I1: Into<CONTEXT>, I2: Into<STATE>>(context: I1, initial_state: I2) -> Self
+    where
+        Self: Sized;
+
+    fn configure_dyn<I1: Into<CONTEXT>, I2: Into<STATE>>(
+        context: I1,
+        initial_state: I2,
+    ) -> DynGenAlgorithm<CONTEXT, STATE, OUTPUT>
+    where
+        Self: Sized + 'static,
+    {
+        Box::new(Self::configure(context, initial_state))
+    }
+}
+
+pub trait Computable<T> {
+    fn try_compute(&mut self) -> Completable<&T>;
+    fn compute(self) -> Cancellable<T>;
+}
+
+pub trait Generatable<T>: Iterator<Item = Cancellable<T>> {
+    fn try_next(&mut self) -> Option<Completable<T>>;
+}
+
+pub type DynComputable<T> = Box<dyn Computable<T>>;
+pub type DynAlgorithm<CONTEXT, STATE, OUTPUT> = Box<dyn Algorithm<CONTEXT, STATE, OUTPUT>>;
+pub type DynGenAlgorithm<CONTEXT, STATE, OUTPUT> = Box<dyn GenAlgorithm<CONTEXT, STATE, OUTPUT>>;
 
 /// A [`Completable`] result is a value that is eventually computed by an algorithm, but
 /// the computation can be incomplete when the value is polled.

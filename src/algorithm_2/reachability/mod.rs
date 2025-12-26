@@ -1,4 +1,4 @@
-use crate::algorithm_trait_2::Computation;
+use crate::algorithm_trait_2::{Algorithm, Computation};
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::Cancellable;
 
@@ -19,6 +19,17 @@ pub use step_operators::{
 /// `Computation<Context = ReachabilityConfig, State = GraphColoredVertices>`.
 pub type ReachabilityComputation<STEP> =
     Computation<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices, STEP>;
+
+/// A helper trait which allows us to use [`ReachabilityAlgorithm`] as shorthand for
+/// `Algorithm<Context = ReachabilityConfig, State = GraphColoredVertices>`.
+pub trait ReachabilityAlgorithm:
+    Algorithm<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static
+{
+}
+impl<T: Algorithm<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static>
+    ReachabilityAlgorithm for T
+{
+}
 
 /// A type alias for the recommended forward reachability configuration using saturation.
 pub type ForwardReachability = ReachabilityComputation<IterativeUnion<SaturationSuccessors>>;

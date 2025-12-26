@@ -1,4 +1,4 @@
-use crate::algorithm_trait_2::{Completable, Incomplete};
+use crate::algorithm_trait_2::{Algorithm, Completable, Computable, Incomplete};
 use cancel_this::{Cancellable, is_cancelled};
 use std::marker::PhantomData;
 
@@ -133,5 +133,38 @@ impl<
 
     pub fn context_ref(&self) -> &CONTEXT {
         &self.context
+    }
+}
+
+impl<
+    CONTEXT,
+    STATE,
+    OUTPUT,
+    STEP: ComputationStepAndConvert<CONTEXT, STATE, OUTPUT, STRATEGY>,
+    STRATEGY,
+> Computable<OUTPUT> for Computation<CONTEXT, STATE, OUTPUT, STEP, STRATEGY>
+{
+    fn try_compute(&mut self) -> Completable<&OUTPUT> {
+        Computation::try_compute(self)
+    }
+
+    fn compute(self) -> Cancellable<OUTPUT> {
+        Computation::compute(self)
+    }
+}
+
+impl<
+    CONTEXT,
+    STATE,
+    OUTPUT,
+    STEP: ComputationStepAndConvert<CONTEXT, STATE, OUTPUT, STRATEGY>,
+    STRATEGY,
+> Algorithm<CONTEXT, STATE, OUTPUT> for Computation<CONTEXT, STATE, OUTPUT, STEP, STRATEGY>
+{
+    fn configure<I1: Into<CONTEXT>, I2: Into<STATE>>(context: I1, initial_state: I2) -> Self
+    where
+        Self: Sized,
+    {
+        Computation::configure(context, initial_state)
     }
 }

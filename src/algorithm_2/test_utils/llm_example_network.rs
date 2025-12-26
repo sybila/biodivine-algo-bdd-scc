@@ -115,13 +115,6 @@ pub fn create_test_network() -> SymbolicAsyncGraph {
     SymbolicAsyncGraph::new(&bn).expect("Failed to create symbolic graph")
 }
 
-/// Returns the variable order for the test network: [x0, x1, x2].
-///
-/// This is useful for creating specific states using `mk_subspace_with_assignments`.
-pub fn variable_order(graph: &SymbolicAsyncGraph) -> Vec<biodivine_lib_param_bn::VariableId> {
-    graph.variables().collect()
-}
-
 /// State constants for readability in tests.
 pub mod states {
     /// State `000` - Fixed point, Attractor 1.

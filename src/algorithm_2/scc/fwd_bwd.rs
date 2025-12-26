@@ -1,11 +1,12 @@
 use crate::algorithm_2::log_set;
-use crate::algorithm_2::reachability::{BackwardReachability, ForwardReachability};
+use crate::algorithm_2::reachability::ReachabilityAlgorithm;
 use crate::algorithm_trait_2::Incomplete::Working;
-use crate::algorithm_trait_2::{Completable, GeneratorStep};
+use crate::algorithm_trait_2::{Completable, DynComputable, GeneratorStep};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use log::{debug, info};
 use num_bigint::BigUint;
+use std::marker::PhantomData;
 
 pub struct FwdBwdState {
     computing: Option<FwdBwdIterationState>,
@@ -14,19 +15,24 @@ pub struct FwdBwdState {
 
 pub struct FwdBwdIterationState {
     universe: GraphColoredVertices,
-    forward: ForwardReachability,
-    backward: BackwardReachability,
+    forward: DynComputable<GraphColoredVertices>,
+    backward: DynComputable<GraphColoredVertices>,
 }
 
-pub struct FwdBwdStep;
+pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
+    _phantom: PhantomData<(FWD, BWD)>,
+}
 
 impl FwdBwdIterationState {
-    fn new(graph: &SymbolicAsyncGraph, value: GraphColoredVertices) -> Self {
+    fn new<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
+        graph: &SymbolicAsyncGraph,
+        value: GraphColoredVertices,
+    ) -> Self {
         let pivot = value.pick_vertex();
         let graph = graph.restrict(&value);
         FwdBwdIterationState {
-            forward: ForwardReachability::configure(graph.clone(), pivot.clone()),
-            backward: BackwardReachability::configure(graph, pivot),
+            forward: FWD::configure_dyn(graph.clone(), pivot.clone()),
+            backward: BWD::configure_dyn(graph.clone(), pivot.clone()),
             universe: value,
         }
     }
@@ -41,7 +47,9 @@ impl From<&SymbolicAsyncGraph> for FwdBwdState {
     }
 }
 
-impl GeneratorStep<SymbolicAsyncGraph, FwdBwdState, GraphColoredVertices> for FwdBwdStep {
+impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
+    GeneratorStep<SymbolicAsyncGraph, FwdBwdState, GraphColoredVertices> for FwdBwdStep<FWD, BWD>
+{
     fn step(
         context: &SymbolicAsyncGraph,
         state: &mut FwdBwdState,
@@ -126,7 +134,7 @@ impl GeneratorStep<SymbolicAsyncGraph, FwdBwdState, GraphColoredVertices> for Fw
                 .expect("Correctness violation: Nothing to process");
 
             assert!(state.computing.is_none());
-            state.computing = Some(FwdBwdIterationState::new(context, todo));
+            state.computing = Some(FwdBwdIterationState::new::<FWD, BWD>(context, todo));
             Err(Working)
         }
     }

@@ -1,5 +1,6 @@
 use crate::algorithm_trait_2::{
-    Completable, Computation, ComputationStepAndConvert, Incomplete, Manual,
+    Completable, Computation, ComputationStepAndConvert, GenAlgorithm, Generatable, Incomplete,
+    Manual,
 };
 use cancel_this::Cancellable;
 use std::marker::PhantomData;
@@ -130,5 +131,24 @@ impl<
         state: CollectorState<CONTEXT, STATE, OUTPUT, STEP, COLLECTION>,
     ) -> COLLECTION {
         state.collector
+    }
+}
+
+impl<CONTEXT, STATE, OUTPUT, STEP: GeneratorStep<CONTEXT, STATE, OUTPUT>> Generatable<OUTPUT>
+    for Generator<CONTEXT, STATE, OUTPUT, STEP>
+{
+    fn try_next(&mut self) -> Option<Completable<OUTPUT>> {
+        Generator::try_next(self)
+    }
+}
+
+impl<CONTEXT, STATE, OUTPUT, STEP: GeneratorStep<CONTEXT, STATE, OUTPUT>>
+    GenAlgorithm<CONTEXT, STATE, OUTPUT> for Generator<CONTEXT, STATE, OUTPUT, STEP>
+{
+    fn configure<I1: Into<CONTEXT>, I2: Into<STATE>>(context: I1, initial_state: I2) -> Self
+    where
+        Self: Sized,
+    {
+        Generator::configure(context, initial_state)
     }
 }
