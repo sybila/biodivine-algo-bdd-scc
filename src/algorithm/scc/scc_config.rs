@@ -1,11 +1,20 @@
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+pub enum TrimSetting {
+    Both,
+    Sources,
+    Sinks,
+    None,
+}
+
 /// A configuration object for various reachability problems.
+#[derive(Clone)]
 pub struct SccConfig {
     /// The graph used for SCC computation.
     pub graph: SymbolicAsyncGraph,
-    /// Indicate that the algorithm should try to trim trivial components (default: true).
-    pub should_trim: bool,
+    /// Indicate that the algorithm should try to trim trivial components (default: both).
+    pub should_trim: TrimSetting,
 }
 
 impl From<SymbolicAsyncGraph> for SccConfig {
@@ -26,12 +35,12 @@ impl SccConfig {
     pub fn new(graph: SymbolicAsyncGraph) -> SccConfig {
         SccConfig {
             graph,
-            should_trim: true,
+            should_trim: TrimSetting::Both,
         }
     }
 
     /// Enabled/disable trimming of trivial components (default: enabled).
-    pub fn should_trim(mut self, should_trim: bool) -> Self {
+    pub fn should_trim(mut self, should_trim: TrimSetting) -> Self {
         self.should_trim = should_trim;
         self
     }

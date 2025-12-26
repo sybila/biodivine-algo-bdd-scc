@@ -5,6 +5,7 @@ mod test_utils;
 
 pub mod reachability;
 pub mod scc;
+pub mod trimming;
 
 /// A utility method for printing useful metadata of symbolic sets.
 fn log_set(set: &GraphColoredVertices) -> String {
