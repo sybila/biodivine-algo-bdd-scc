@@ -85,42 +85,33 @@
 //! - To `110`: from `{110, 111, 100, 101, 011}` (attractor 2 plus its basin)
 //! - To `111`: from `{111, 110, 101, 011, 100}` (same as 110, since they form a cycle)
 
-use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+
+use super::llm_transition_builder::from_transitions;
 
 /// Creates the canonical test network as a `SymbolicAsyncGraph`.
 ///
 /// See the module documentation for a complete description of the network structure.
+///
+/// The network is automatically generated from the list of transitions defined below.
 pub fn create_test_network() -> SymbolicAsyncGraph {
-    // The network in AEON format.
-    // Variables: x0, x1, x2
-    // Update functions:
-    //   f_x0 = (x0 & x1) | (x1 & x2) | (x0 & x2)  -- majority (all positive influences)
-    //   f_x1 = x0                                  -- simple copy (positive influence)
-    //   f_x2 = x0 & ((x1 & !x2) | (!x1 & x2))     -- x0 & (x1 XOR x2)
-    //
-    // For f_x0: all influences are positive (majority is monotone in all arguments)
-    // For f_x1: x0 is positive
-    // For f_x2: x0 is positive (AND), but x1 and x2 are non-monotonic (XOR)
-    //
-    // Edge notation:
-    //   -> means activating (positive monotone)
-    //   -? means observable (non-monotonic, can be either positive or negative)
-    let aeon_model = r#"
-        x0 -> x0
-        x1 -> x0
-        x2 -> x0
-        x0 -> x1
-        x0 -> x2
-        x1 -? x2
-        x2 -? x2
-        $x0: (x0 & x1) | (x1 & x2) | (x0 & x2)
-        $x1: x0
-        $x2: x0 & ((x1 & !x2) | (!x1 & x2))
-    "#;
+    // Define the transitions as documented in the module comments
+    // States are encoded as binary: x0*4 + x1*2 + x2*1
+    let transitions = vec![
+        (0b001, 0b000), // x2 updates: f_x2(001) = 0 ≠ 1
+        (0b010, 0b000), // x1 updates: f_x1(010) = 0 ≠ 1
+        (0b011, 0b001), // x1 updates: f_x1(011) = 0 ≠ 1
+        (0b011, 0b010), // x2 updates: f_x2(011) = 0 ≠ 1
+        (0b011, 0b111), // x0 updates: f_x0(011) = 1 ≠ 0
+        (0b100, 0b000), // x0 updates: f_x0(100) = 0 ≠ 1
+        (0b100, 0b110), // x1 updates: f_x1(100) = 1 ≠ 0
+        (0b101, 0b111), // x1 updates: f_x1(101) = 1 ≠ 0
+        (0b110, 0b111), // x2 updates: f_x2(110) = 1 ≠ 0
+        (0b111, 0b110), // x2 updates: f_x2(111) = 0 ≠ 1
+    ];
 
-    let bn = BooleanNetwork::try_from(aeon_model).expect("Invalid AEON model");
+    let bn = from_transitions(3, &transitions).expect("Failed to create network from transitions");
     SymbolicAsyncGraph::new(&bn).expect("Failed to create symbolic graph")
 }
 

@@ -1,4 +1,5 @@
 pub mod llm_example_network;
+pub mod llm_transition_builder;
 
 /// Initialize env_logger for tests. Safe to call multiple times.
 pub fn init_logger() {
