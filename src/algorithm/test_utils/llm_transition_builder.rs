@@ -35,7 +35,7 @@
 //! ```
 
 use biodivine_lib_param_bn::BooleanNetwork;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// Represents a transition from one state to another.
 /// States are represented as integers where the binary encoding corresponds
@@ -292,10 +292,7 @@ pub fn from_transitions(
     let mut function_true_states: Vec<HashSet<u32>> = vec![HashSet::new(); num_vars];
 
     // Build a map of which variables can update from each state
-    let mut variables_that_update: std::collections::HashMap<
-        u32,
-        std::collections::HashSet<usize>,
-    > = std::collections::HashMap::new();
+    let mut variables_that_update: HashMap<u32, HashSet<usize>> = HashMap::new();
 
     // Process each transition to determine which variables can update
     for &(from, to) in transitions {
@@ -307,7 +304,7 @@ pub fn from_transitions(
         // Record that this variable can update from this state
         variables_that_update
             .entry(from)
-            .or_insert_with(std::collections::HashSet::new)
+            .or_insert_with(HashSet::new)
             .insert(var_idx);
 
         // Determine the new value of the changed variable
@@ -317,7 +314,7 @@ pub fn from_transitions(
         if new_value {
             function_true_states[var_idx].insert(from);
         } else {
-            // Explicitly remove from true set (in case it was added before)
+            // Explicitly remove from a true set (in case it was added before)
             function_true_states[var_idx].remove(&from);
         }
     }
@@ -357,16 +354,16 @@ pub fn from_transitions(
     let mut aeon_lines = Vec::new();
 
     // Add update functions in DNF first (we need them to determine dependencies)
-    let mut dnfs = Vec::new();
+    let mut dnf_functions = Vec::new();
     for i in 0..num_vars {
         let dnf = states_to_dnf(&function_true_states[i], num_vars, &var_names);
-        dnfs.push(dnf.clone());
+        dnf_functions.push(dnf.clone());
     }
 
     // Add edges: for each variable, declare edges from variables that appear in its DNF.
     // We use "observable" (-?) edges since we don't know `monotonicity` from transitions alone.
     for i in 0..num_vars {
-        let dnf = &dnfs[i];
+        let dnf = &dnf_functions[i];
         let is_constant = dnf == "0" || dnf == "1";
 
         if is_constant {
@@ -384,7 +381,7 @@ pub fn from_transitions(
 
     // Add update functions
     for i in 0..num_vars {
-        aeon_lines.push(format!("${}: {}", var_names[i], dnfs[i]));
+        aeon_lines.push(format!("${}: {}", var_names[i], dnf_functions[i]));
     }
 
     let aeon_model = aeon_lines.join("\n");
@@ -451,8 +448,7 @@ mod tests {
             transitions.iter().map(|(from, _)| *from).collect();
 
         // Build a map of declared transitions: from_state -> set of to_states
-        let mut declared_transitions: std::collections::HashMap<u32, HashSet<u32>> =
-            std::collections::HashMap::new();
+        let mut declared_transitions: HashMap<u32, HashSet<u32>> = HashMap::new();
         for &(from, to) in transitions {
             declared_transitions
                 .entry(from)

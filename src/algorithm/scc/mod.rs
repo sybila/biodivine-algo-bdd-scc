@@ -10,14 +10,14 @@ use crate::algorithm_trait::{GenAlgorithm, Generator};
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 pub use fwd_bwd::{FwdBwdIterationState, FwdBwdState, FwdBwdStep};
 
-/// A helper trait which allows us to use [`crate::algorithm::reachability::ReachabilityAlgorithm`] as shorthand for
-/// `Algorithm<Context = ReachabilityConfig, State = GraphColoredVertices>`.
-pub trait SccGenAlgorithm<STATE>:
+/// A helper trait which allows us to use [`SccAlgorithm`] as shorthand for
+/// `GenAlgorithm<Context = SymbolicAsyncGraph, Output = GraphColoredVertices>`.
+pub trait SccAlgorithm<STATE>:
     GenAlgorithm<SymbolicAsyncGraph, STATE, GraphColoredVertices> + 'static
 {
 }
 impl<STATE, T: GenAlgorithm<SymbolicAsyncGraph, STATE, GraphColoredVertices> + 'static>
-    SccGenAlgorithm<STATE> for T
+    SccAlgorithm<STATE> for T
 {
 }
 

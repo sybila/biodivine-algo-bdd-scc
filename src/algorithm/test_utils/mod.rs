@@ -14,7 +14,7 @@ pub fn init_logger() {
 
 /// Creates a singleton state from a state number.
 ///
-/// The state number is interpreted as binary encoding (most significant bit = variable 0).
+/// The state number is interpreted as binary encoding (the most significant bit = variable 0).
 /// The number of variables is inferred from the graph.
 ///
 /// # Arguments

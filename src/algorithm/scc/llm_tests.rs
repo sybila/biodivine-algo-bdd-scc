@@ -1,9 +1,12 @@
-//! Comprehensive tests for the forward-backward SCC detection algorithm.
+//! Comprehensive tests for SCC detection algorithms.
 //!
-//! These tests verify that the algorithm correctly identifies all non-trivial SCCs
+//! These tests verify that algorithms correctly identify all non-trivial SCCs
 //! (SCCs with more than one state) and that no extra SCCs are reported.
+//!
+//! The tests are generic and can be used to test any algorithm that implements
+//! the `SccAlgorithm` trait.
 
-use crate::algorithm::scc::FwdBwdScc;
+use crate::algorithm::scc::{FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm};
 use crate::algorithm::test_utils::llm_example_network::create_test_network;
 use crate::algorithm::test_utils::llm_example_network::sets::ATTRACTOR_2;
 use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
@@ -85,9 +88,14 @@ fn verify_sccs(
     }
 }
 
-/// Test case: Single 2-cycle (simplest non-trivial SCC).
-#[test]
-fn test_single_2_cycle() {
+// ========== Parametrized test helpers ==========
+
+/// Generic helper function for testing single 2-cycle detection.
+fn test_single_2_cycle_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a 2-variable network with a single 2-cycle: 00 ↔ 10
     // 00 → 10 (x0 flips)
@@ -97,7 +105,7 @@ fn test_single_2_cycle() {
     let bn = from_transitions(2, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -107,9 +115,12 @@ fn test_single_2_cycle() {
     verify_sccs(&graph, found_sccs, &[&[0b00, 0b10]], 2);
 }
 
-/// Test case: Single 3-cycle.
-#[test]
-fn test_single_3_cycle() {
+/// Generic helper function for testing single 3-cycle detection.
+fn test_single_3_cycle_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a 3-variable network with a cycle containing 6 states
     // 000 → 100 → 110 → 111 → 011 → 001 → 000
@@ -125,7 +136,7 @@ fn test_single_3_cycle() {
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -141,9 +152,12 @@ fn test_single_3_cycle() {
     );
 }
 
-/// Test case: Two disjoint 2-cycles.
-#[test]
-fn test_two_disjoint_2_cycles() {
+/// Generic helper function for testing two disjoint 2-cycles detection.
+fn test_two_disjoint_2_cycles_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a 3-variable network with two disjoint 2-cycles:
     // Cycle 1: 000 ↔ 100
@@ -159,7 +173,7 @@ fn test_two_disjoint_2_cycles() {
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -170,9 +184,12 @@ fn test_two_disjoint_2_cycles() {
     verify_sccs(&graph, found_sccs, &[&[0b000, 0b100], &[0b011, 0b111]], 3);
 }
 
-/// Test case: Multiple SCCs with different sizes.
-#[test]
-fn test_multiple_sccs_different_sizes() {
+/// Generic helper function for testing multiple SCCs with different sizes.
+fn test_multiple_sccs_different_sizes_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a 3-variable network with:
     // - A 2-cycle: 000 ↔ 100
@@ -190,7 +207,7 @@ fn test_multiple_sccs_different_sizes() {
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -206,9 +223,12 @@ fn test_multiple_sccs_different_sizes() {
     );
 }
 
-/// Test case: SCC with branching paths (more complex structure).
-#[test]
-fn test_scc_with_branching() {
+/// Generic helper function for testing SCC with branching paths.
+fn test_scc_with_branching_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a network where multiple paths converge into a cycle:
     // 000 → 100 → 110 ↔ 111
@@ -226,7 +246,7 @@ fn test_scc_with_branching() {
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -237,9 +257,12 @@ fn test_scc_with_branching() {
     verify_sccs(&graph, found_sccs, &[&[0b110, 0b111]], 3);
 }
 
-/// Test case: Network with no non-trivial SCCs (only fixed points).
-#[test]
-fn test_only_trivial_sccs() {
+/// Generic helper function for testing network with no non-trivial SCCs.
+fn test_only_trivial_sccs_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a network where all states transition to fixed points (no cycles)
     // 000 is fixed, 001 → 000 (x2 flips from 1 to 0)
@@ -250,7 +273,7 @@ fn test_only_trivial_sccs() {
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -266,9 +289,12 @@ fn test_only_trivial_sccs() {
     );
 }
 
-/// Test case: Large SCC (4-cycle).
-#[test]
-fn test_4_cycle() {
+/// Generic helper function for testing 4-cycle detection.
+fn test_4_cycle_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a 2-variable network with a 4-cycle: 00 → 10 → 11 → 01 → 00
     let transitions = vec![
@@ -281,7 +307,7 @@ fn test_4_cycle() {
     let bn = from_transitions(2, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -292,9 +318,12 @@ fn test_4_cycle() {
     verify_sccs(&graph, found_sccs, &[&[0b00, 0b01, 0b10, 0b11]], 2);
 }
 
-/// Test case: SCC with multiple paths.
-#[test]
-fn test_scc_with_multiple_paths() {
+/// Generic helper function for testing SCC with multiple paths.
+fn test_scc_with_multiple_paths_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a network where one state in an SCC has multiple outgoing edges:
     // 000 ↔ 100, and 100 can also go to 110, but 110 goes back to 100
@@ -309,7 +338,7 @@ fn test_scc_with_multiple_paths() {
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -320,12 +349,15 @@ fn test_scc_with_multiple_paths() {
     verify_sccs(&graph, found_sccs, &[&[0b000, 0b100, 0b110]], 3);
 }
 
-/// Test case: Verify the example network from llm_example_network.
-#[test]
-fn test_llm_example_network() {
+/// Generic helper function for testing the example network from llm_example_network.
+fn test_llm_example_network_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     let graph = create_test_network();
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -338,9 +370,12 @@ fn test_llm_example_network() {
     assert_eq!(attractor_2, found_sccs[0]);
 }
 
-/// Test case: Complex network with multiple SCCs and basins.
-#[test]
-fn test_complex_network() {
+/// Generic helper function for testing a complex network with multiple SCCs.
+fn test_complex_network_impl<STATE, ALG>()
+where
+    ALG: SccAlgorithm<STATE>,
+    STATE: for<'a> From<&'a SymbolicAsyncGraph>,
+{
     init_logger();
     // Create a 4-variable network with:
     // - SCC 1: {0000, 1000} (2-cycle)
@@ -360,7 +395,7 @@ fn test_complex_network() {
     let bn = from_transitions(4, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
 
-    let mut generator = FwdBwdScc::configure(graph.clone(), &graph);
+    let mut generator = ALG::configure(graph.clone(), &graph);
     let mut found_sccs = Vec::new();
 
     while let Some(result) = generator.next() {
@@ -374,4 +409,108 @@ fn test_complex_network() {
         &[&[0b0000, 0b1000], &[0b0001, 0b0011, 0b1001, 0b1011]],
         4,
     );
+}
+
+// ========== Tests for FwdBwdScc (saturation) ==========
+
+#[test]
+fn test_single_2_cycle_fwd_bwd() {
+    test_single_2_cycle_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_single_3_cycle_fwd_bwd() {
+    test_single_3_cycle_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_two_disjoint_2_cycles_fwd_bwd() {
+    test_two_disjoint_2_cycles_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_multiple_sccs_different_sizes_fwd_bwd() {
+    test_multiple_sccs_different_sizes_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_scc_with_branching_fwd_bwd() {
+    test_scc_with_branching_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_only_trivial_sccs_fwd_bwd() {
+    test_only_trivial_sccs_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_4_cycle_fwd_bwd() {
+    test_4_cycle_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_scc_with_multiple_paths_fwd_bwd() {
+    test_scc_with_multiple_paths_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_llm_example_network_fwd_bwd() {
+    test_llm_example_network_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+#[test]
+fn test_complex_network_fwd_bwd() {
+    test_complex_network_impl::<FwdBwdState, FwdBwdScc>()
+}
+
+// ========== Tests for FwdBwdSccBfs ==========
+
+#[test]
+fn test_single_2_cycle_fwd_bwd_bfs() {
+    test_single_2_cycle_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_single_3_cycle_fwd_bwd_bfs() {
+    test_single_3_cycle_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_two_disjoint_2_cycles_fwd_bwd_bfs() {
+    test_two_disjoint_2_cycles_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_multiple_sccs_different_sizes_fwd_bwd_bfs() {
+    test_multiple_sccs_different_sizes_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_scc_with_branching_fwd_bwd_bfs() {
+    test_scc_with_branching_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_only_trivial_sccs_fwd_bwd_bfs() {
+    test_only_trivial_sccs_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_4_cycle_fwd_bwd_bfs() {
+    test_4_cycle_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_scc_with_multiple_paths_fwd_bwd_bfs() {
+    test_scc_with_multiple_paths_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_llm_example_network_fwd_bwd_bfs() {
+    test_llm_example_network_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+#[test]
+fn test_complex_network_fwd_bwd_bfs() {
+    test_complex_network_impl::<FwdBwdState, FwdBwdSccBfs>()
 }
