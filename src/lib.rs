@@ -7,6 +7,8 @@ mod trimming;
 
 pub mod algorithm;
 
+pub mod algorithm_trait_2;
+
 mod algorithm_trait;
 pub use algorithm_trait::Algorithm;
 
