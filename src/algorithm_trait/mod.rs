@@ -48,10 +48,6 @@
 //! assert_eq!(computation.try_compute(), Ok(&6));  // done
 //! ```
 //!
-//! ## Output type conversion
-//!
-//! In the example above,
-//!
 //! ## Implementation
 //!
 //! The operation is split into two methods: First, `step` is repeatedly called with `CONTEXT`
@@ -147,7 +143,7 @@ pub type DynComputable<T> = Box<dyn Computable<T>>;
 pub type DynAlgorithm<CONTEXT, STATE, OUTPUT> = Box<dyn Algorithm<CONTEXT, STATE, OUTPUT>>;
 pub type DynGenAlgorithm<CONTEXT, STATE, OUTPUT> = Box<dyn GenAlgorithm<CONTEXT, STATE, OUTPUT>>;
 
-/// A [`Completable`] result is a value that is eventually computed by an algorithm, but
+/// A [`Completable`] result is a value eventually computed by an algorithm, but
 /// the computation can be incomplete when the value is polled.
 pub type Completable<T> = Result<T, Incomplete>;
 

@@ -39,7 +39,7 @@ impl SccConfig {
         }
     }
 
-    /// Enabled/disable trimming of trivial components (default: enabled).
+    /// Set trimming of trivial components (none/sinks/sources/both; default: both).
     pub fn should_trim(mut self, should_trim: TrimSetting) -> Self {
         self.should_trim = should_trim;
         self
