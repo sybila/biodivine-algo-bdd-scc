@@ -15,6 +15,7 @@ pub struct RemainingSet {
 }
 
 pub enum IterationState {
+    Idle,
     Trimming {
         universe: GraphColoredVertices,
         pivot_hint: GraphColoredVertices,
@@ -33,14 +34,14 @@ pub enum IterationState {
 }
 
 pub struct ChainState {
-    computing: Option<IterationState>,
+    computing: IterationState,
     to_process: Vec<RemainingSet>,
 }
 
 impl From<&SymbolicAsyncGraph> for ChainState {
     fn from(value: &SymbolicAsyncGraph) -> Self {
         ChainState {
-            computing: None,
+            computing: IterationState::Idle,
             to_process: vec![RemainingSet {
                 set: value.mk_unit_colored_vertices(),
                 pivot_hint: value.mk_empty_colored_vertices(),
@@ -88,7 +89,7 @@ impl IterationState {
         }
     }
 
-    fn new_scc<FWD: ReachabilityAlgorithm>(
+    fn new_scc_state<FWD: ReachabilityAlgorithm>(
         context: &SccConfig,
         universe: GraphColoredVertices,
         pivot: GraphColoredVertices,
@@ -117,174 +118,166 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
         context: &SccConfig,
         state: &mut ChainState,
     ) -> Completable<Option<GraphColoredVertices>> {
-        if let Some(iteration) = state.computing.as_mut() {
-            match iteration {
-                IterationState::Trimming {
-                    trimmed,
-                    pivot_hint,
-                    universe,
-                } => {
-                    // Try to advance the trimming computation. If trimming is done, recompute
-                    // the pivot hint (if needed) and move on to basin computation.
+        match &mut state.computing {
+            IterationState::Trimming {
+                trimmed,
+                pivot_hint,
+                universe,
+            } => {
+                // Try to advance the trimming computation. If trimming is done, recompute
+                // the pivot hint (if needed) and move on to basin computation.
 
-                    let trimmed = trimmed.try_compute()?;
-                    if trimmed.is_empty() {
-                        state.computing = None;
-                        debug!("Candidate set trimmed to empty.");
-                        return Err(Working);
-                    }
+                let trimmed = trimmed.try_compute()?;
+                if trimmed.is_empty() {
+                    state.computing = IterationState::Idle;
+                    debug!("Candidate set trimmed to empty.");
+                    return Err(Working);
+                }
 
-                    debug!("Candidate set trimmed ({}).", log_set(trimmed));
+                debug!("Candidate set trimmed ({}).", log_set(trimmed));
 
-                    let mut pivot_hint = trimmed.intersect(pivot_hint);
-                    if pivot_hint.is_empty() {
-                        // If trimming has removed all hint states, try to find
-                        // additional hint states at the border of the trimmed set.
+                let mut pivot_hint = trimmed.intersect(pivot_hint);
+                if pivot_hint.is_empty() {
+                    // If trimming has removed all hint states, try to find
+                    // additional hint states at the border of the trimmed set.
 
-                        let removed = universe.minus(trimmed);
-                        for var in context.graph.variables().rev() {
-                            let var_post = context.graph.var_post(var, &removed).intersect(trimmed);
-                            if !var_post.is_empty() {
-                                pivot_hint = var_post;
-                                debug!(
-                                    "Updated pivot hint after trimming ({}).",
-                                    log_set(&pivot_hint)
-                                );
-                                break;
-                            }
+                    let removed = universe.minus(trimmed);
+                    for var in context.graph.variables().rev() {
+                        let var_post = context.graph.var_post(var, &removed).intersect(trimmed);
+                        if !var_post.is_empty() {
+                            pivot_hint = var_post;
+                            debug!(
+                                "Updated pivot hint after trimming ({}).",
+                                log_set(&pivot_hint)
+                            );
+                            break;
                         }
                     }
-
-                    state.computing = Some(IterationState::new_basin_state::<BWD>(
-                        context,
-                        universe.clone(),
-                        &pivot_hint,
-                    ));
-                    Err(Working)
                 }
-                IterationState::ChainBasin {
-                    universe,
-                    pivot,
-                    basin,
-                } => {
-                    // Try to advance the basin computation. If the basin is done, move on to
-                    // SCC computation.
-                    let basin = basin.try_compute()?;
-                    state.computing = Some(IterationState::new_scc::<FWD>(
-                        context,
-                        universe.clone(),
-                        pivot.clone(),
-                        basin.clone(),
-                    ));
-                    Err(Working)
-                }
-                IterationState::ChainScc {
-                    universe,
-                    basin,
-                    scc,
-                } => {
-                    // Try to advance the SCC computation. If the SCC is done, we can partition
-                    // the remaining states, report the SCC and move on to other iterations.
-                    let scc = scc.try_compute()?;
-                    debug!("Extracted raw SCC ({})", log_set(scc));
 
-                    // Enqueue the remaining states for further processing.
-                    let remaining_basin = basin.minus(scc);
-                    let remaining_rest = universe.minus(basin);
-
-                    if !remaining_basin.is_empty() {
-                        // Try to find *some* states that are direct predecessors of SCC inside
-                        // the remaining basin.
-                        let mut hint = context.graph.mk_empty_colored_vertices();
-                        for var in context.graph.variables().rev() {
-                            let var_pre = context
-                                .graph
-                                .var_pre_out(var, scc)
-                                .intersect(&remaining_basin);
-                            if !var_pre.is_empty() {
-                                hint = var_pre;
-                                break;
-                            }
-                        }
-
-                        debug!(
-                            "Pushed remaining BASIN ({}) with hint ({}).",
-                            log_set(&remaining_basin),
-                            log_set(&hint),
-                        );
-
-                        state.to_process.push(RemainingSet {
-                            set: remaining_basin,
-                            pivot_hint: hint,
-                        });
-                    }
-                    if !remaining_rest.is_empty() {
-                        // Try to find *some* states that are direct successors of SCC inside
-                        // the remaining set.
-                        let mut hint = context.graph.mk_empty_colored_vertices();
-                        for var in context.graph.variables().rev() {
-                            let var_pre = context
-                                .graph
-                                .var_post_out(var, scc)
-                                .intersect(&remaining_rest);
-                            if !var_pre.is_empty() {
-                                hint = var_pre;
-                                break;
-                            }
-                        }
-
-                        debug!(
-                            "Pushed remaining REST ({}) with hint ({}).",
-                            log_set(&remaining_rest),
-                            log_set(&hint),
-                        );
-
-                        state.to_process.push(RemainingSet {
-                            set: remaining_rest,
-                            pivot_hint: hint,
-                        });
-                    }
-
-                    // Remove colors where the SCC is a singleton state:
-                    let valid_colors = scc.minus(&scc.pick_vertex()).colors();
-                    let scc = scc.intersect_colors(&valid_colors);
-                    state.computing = None;
-                    try_report_scc(scc)
-                }
+                state.computing =
+                    IterationState::new_basin_state::<BWD>(context, universe.clone(), &pivot_hint);
+                Err(Working)
             }
-        } else {
-            // We are in-between iterations. We need to pick a new set for processing.
-            // In theory, this choice does not matter because all sets need to be processed
-            // eventually.
-
-            if state.to_process.is_empty() {
-                // If there is nothing to process, we are done.
-                return Ok(None);
+            IterationState::ChainBasin {
+                universe,
+                pivot,
+                basin,
+            } => {
+                // Try to advance the basin computation. If the basin is done, move on to
+                // SCC computation.
+                let basin = basin.try_compute()?;
+                state.computing = IterationState::new_scc_state::<FWD>(
+                    context,
+                    universe.clone(),
+                    pivot.clone(),
+                    basin.clone(),
+                );
+                Err(Working)
             }
+            IterationState::ChainScc {
+                universe,
+                basin,
+                scc,
+            } => {
+                // Try to advance the SCC computation. If the SCC is done, we can partition
+                // the remaining states, report the SCC and move on to other iterations.
+                let scc = scc.try_compute()?;
+                debug!("Extracted raw SCC ({})", log_set(scc));
 
-            let todo = state
-                .to_process
-                .pop()
-                .expect("Correctness violation: Nothing to process");
+                // Enqueue the remaining states for further processing.
+                let remaining_basin = basin.minus(scc);
+                let remaining_rest = universe.minus(basin);
 
-            info!(
-                "Start processing ({}); {} sets remaining (BDD nodes={})",
-                log_set(&todo.set),
-                state.to_process.len(),
-                state
+                if !remaining_basin.is_empty() {
+                    // Try to find *some* states that are direct predecessors of SCC inside
+                    // the remaining basin.
+                    let mut hint = context.graph.mk_empty_colored_vertices();
+                    for var in context.graph.variables().rev() {
+                        let var_pre = context
+                            .graph
+                            .var_pre_out(var, scc)
+                            .intersect(&remaining_basin);
+                        if !var_pre.is_empty() {
+                            hint = var_pre;
+                            break;
+                        }
+                    }
+
+                    debug!(
+                        "Pushed remaining BASIN ({}) with hint ({}).",
+                        log_set(&remaining_basin),
+                        log_set(&hint),
+                    );
+
+                    state.to_process.push(RemainingSet {
+                        set: remaining_basin,
+                        pivot_hint: hint,
+                    });
+                }
+                if !remaining_rest.is_empty() {
+                    // Try to find *some* states that are direct successors of SCC inside
+                    // the remaining set.
+                    let mut hint = context.graph.mk_empty_colored_vertices();
+                    for var in context.graph.variables().rev() {
+                        let var_pre = context
+                            .graph
+                            .var_post_out(var, scc)
+                            .intersect(&remaining_rest);
+                        if !var_pre.is_empty() {
+                            hint = var_pre;
+                            break;
+                        }
+                    }
+
+                    debug!(
+                        "Pushed remaining REST ({}) with hint ({}).",
+                        log_set(&remaining_rest),
+                        log_set(&hint),
+                    );
+
+                    state.to_process.push(RemainingSet {
+                        set: remaining_rest,
+                        pivot_hint: hint,
+                    });
+                }
+
+                // Remove colors where the SCC is a singleton state:
+                let valid_colors = scc.minus(&scc.pick_vertex()).colors();
+                let scc = scc.intersect_colors(&valid_colors);
+                state.computing = IterationState::Idle;
+                try_report_scc(scc)
+            }
+            IterationState::Idle => {
+                // We are in-between iterations. We need to pick a new set for processing.
+                // In theory, this choice does not matter because all sets need to be processed
+                // eventually.
+
+                if state.to_process.is_empty() {
+                    // If there is nothing to process, we are done.
+                    return Ok(None);
+                }
+
+                let todo = state
                     .to_process
-                    .iter()
-                    .map(|it| it.set.symbolic_size())
-                    .sum::<usize>()
-            );
+                    .pop()
+                    .expect("Correctness violation: Nothing to process");
 
-            assert!(state.computing.is_none());
-            state.computing = Some(IterationState::new_trim_state::<BWD>(
-                context,
-                todo.set,
-                todo.pivot_hint,
-            ));
-            Err(Working)
+                info!(
+                    "Start processing ({}); {} sets remaining (BDD nodes={})",
+                    log_set(&todo.set),
+                    state.to_process.len(),
+                    state
+                        .to_process
+                        .iter()
+                        .map(|it| it.set.symbolic_size())
+                        .sum::<usize>()
+                );
+
+                state.computing =
+                    IterationState::new_trim_state::<BWD>(context, todo.set, todo.pivot_hint);
+                Err(Working)
+            }
         }
     }
 }

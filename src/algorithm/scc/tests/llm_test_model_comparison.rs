@@ -76,7 +76,7 @@ fn test_scc_comparison_impl(model_path: &str) -> Cancellable<()> {
 /// The entire test has a 5s timeout. The test passes if it completes or times out.
 #[test_resources("./models/bbm-inputs-true/*.aeon")]
 fn test_scc_fwd_bwd_vs_chain_comparison(model_path: &str) {
-    let five_seconds = Duration::from_secs(5);
+    let five_seconds = Duration::from_secs(2);
     match cancel_this::on_timeout(five_seconds, || test_scc_comparison_impl(model_path)) {
         Ok(()) => {}
         Err(_) => {
