@@ -1,7 +1,6 @@
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 
 pub mod chain;
-pub mod fwd_bwd;
 mod hamming;
 mod trimming;
 

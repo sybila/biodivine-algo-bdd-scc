@@ -28,10 +28,6 @@ name = "chain"
 path = "src/bin/chain.rs"
 
 [[bin]]
-name = "fwd_bwd"
-path = "src/bin/fwd_bwd.rs"
-
-[[bin]]
 name = "scc"
 path = "src/bin/scc.rs"
 required-features = ["build-binary"]
