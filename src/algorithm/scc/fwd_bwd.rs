@@ -7,7 +7,6 @@ use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use log::{debug, info};
-use num_bigint::BigUint;
 use std::marker::PhantomData;
 
 pub struct FwdBwdState {
@@ -140,24 +139,14 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                 return Ok(None);
             }
 
-            let total_used = state
-                .to_process
-                .iter()
-                .map(|it| it.symbolic_size())
-                .sum::<usize>();
-            let total_elements = state
-                .to_process
-                .iter()
-                .map(|it| it.exact_cardinality())
-                .sum::<BigUint>();
-            state.to_process.sort_by_cached_key(|it| it.symbolic_size());
-            state.to_process.reverse();
-
             info!(
-                "{} sets remaining (elements={}; BDD nodes={})",
+                "{} sets remaining (BDD nodes={})",
                 state.to_process.len(),
-                total_elements,
-                total_used
+                state
+                    .to_process
+                    .iter()
+                    .map(|it| it.symbolic_size())
+                    .sum::<usize>()
             );
 
             let todo = state
