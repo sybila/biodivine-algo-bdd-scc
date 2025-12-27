@@ -1,6 +1,6 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
-use crate::algorithm::scc::{SccConfig, try_report_scc};
+use crate::algorithm::scc::{SccConfig, retain_long_lived, try_report_scc};
 use crate::algorithm::trimming::TrimSetting;
 use crate::algorithm_trait::Incomplete::Working;
 use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
@@ -122,7 +122,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                 let valid_colors = scc.minus(&scc.pick_vertex()).colors();
                 let scc = scc.intersect_colors(&valid_colors);
                 state.computing = IterationState::Idle;
-                try_report_scc(scc)
+                try_report_scc(context, scc)
             }
             IterationState::Idle => {
                 // We are in-between iterations. We need to pick a new set for processing.
@@ -138,6 +138,17 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                     .to_process
                     .pop()
                     .expect("Correctness violation: Nothing to process");
+
+                let todo = if context.filter_long_lived {
+                    retain_long_lived(&context.graph, &todo)
+                } else {
+                    todo
+                };
+
+                if todo.is_empty() {
+                    info!("Skipping short-lived set ({}).", log_set(&todo));
+                    return Err(Working);
+                }
 
                 info!(
                     "Start processing ({}); {} sets remaining (BDD nodes={})",

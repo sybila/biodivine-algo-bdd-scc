@@ -27,6 +27,10 @@ struct Args {
     #[arg(long, default_value_t = 0, require_equals = true)]
     count: usize,
 
+    /// Filter long-lived components only
+    #[arg(long)]
+    long_lived: bool,
+
     /// Verbose logging level: "trace", "debug", or "info"
     /// If specified without a value (--verbose or -v), defaults to "info"
     /// Use --verbose=LEVEL or -v=LEVEL to specify a level, or just --verbose/-v for info
@@ -114,7 +118,9 @@ fn main() {
         .unwrap_or_else(|e| panic!("Failed to create symbolic async graph: {}", e));
 
     // Create SCC config
-    let config = SccConfig::new(graph.clone()).should_trim(args.trim.into());
+    let config = SccConfig::new(graph.clone())
+        .should_trim(args.trim.into())
+        .filter_long_lived(args.long_lived);
 
     // Helper function to enumerate SCCs from a generator
     fn enumerate_sccs<G>(generator: G, count: usize) -> usize
