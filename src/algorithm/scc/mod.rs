@@ -11,7 +11,7 @@ use crate::algorithm_trait::{GenAlgorithm, Generator};
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 
 pub use fwd_bwd::{FwdBwdState, FwdBwdStep};
-pub use scc_config::SccConfig;
+pub use scc_config::{SccConfig, TrimSetting};
 
 /// A helper trait which allows us to use [`SccAlgorithm`] as shorthand for
 /// `GenAlgorithm<Context = SymbolicAsyncGraph, Output = GraphColoredVertices>`.
