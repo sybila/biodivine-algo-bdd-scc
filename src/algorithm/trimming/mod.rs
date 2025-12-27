@@ -16,7 +16,7 @@ pub type TrimSources = ReachabilityComputation<IterativeSubtraction<RelativeSour
 pub type TrimSinksAndSources =
     ReachabilityComputation<IterativeSubtraction<RelativeSinksAndSources>>;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum TrimSetting {
     Both,
     Sources,

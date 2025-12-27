@@ -32,7 +32,6 @@ pub fn collect_state_numbers(
             states.push(state);
         }
     }
-    states.sort();
     states
 }
 
