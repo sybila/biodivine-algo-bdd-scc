@@ -1,4 +1,4 @@
-use biodivine_lib_algo_scc::algorithm::scc::{FwdBwdScc, FwdBwdSccBfs, SccConfig};
+use biodivine_lib_algo_scc::algorithm::scc::{ChainScc, FwdBwdScc, FwdBwdSccBfs, SccConfig};
 use biodivine_lib_algo_scc::algorithm::trimming::TrimSetting;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
@@ -40,6 +40,8 @@ enum Algorithm {
     FwdBwd,
     #[value(name = "fwd-bwd-bfs")]
     FwdBwdBfs,
+    #[value(name = "chain")]
+    Chain,
 }
 
 #[derive(Clone, clap::ValueEnum)]
@@ -150,6 +152,7 @@ fn main() {
     let enumerated = match args.algorithm {
         Algorithm::FwdBwd => enumerate_sccs(FwdBwdScc::configure(config, &graph), args.count),
         Algorithm::FwdBwdBfs => enumerate_sccs(FwdBwdSccBfs::configure(config, &graph), args.count),
+        Algorithm::Chain => enumerate_sccs(ChainScc::configure(config, &graph), args.count),
     };
 
     if args.count == 0 {

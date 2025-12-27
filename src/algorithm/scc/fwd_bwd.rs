@@ -73,6 +73,15 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
             match iteration {
                 IterationState::Trimming(trim) => {
                     let trimmed = trim.try_compute()?;
+
+                    if trimmed.is_empty() {
+                        state.computing = None;
+                        debug!("Candidate set trimmed to empty.");
+                        return Err(Working);
+                    }
+
+                    debug!("Candidate set trimmed ({}).", log_set(trimmed));
+
                     state.computing = Some(IterationState::new_fwd_bwd::<FWD, BWD>(
                         context,
                         trimmed.clone(),
@@ -130,17 +139,21 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
         } else {
             // We are in-between iterations. We need to pick a new set for processing.
             // In theory, this choice does not matter because all sets need to be processed
-            // eventually. However, since the algorithm can be also terminated early, it
-            // is preferred to return as many SCCs as quickly as possible. As such, we always
-            // pick the smallest set (in terms of BDD size).
+            // eventually.
 
             if state.to_process.is_empty() {
                 // If there is nothing to process, we are done.
                 return Ok(None);
             }
 
+            let todo = state
+                .to_process
+                .pop()
+                .expect("Correctness violation: Nothing to process");
+
             info!(
-                "{} sets remaining (BDD nodes={})",
+                "Start processing ({}); {} sets remaining (BDD nodes={})",
+                log_set(&todo),
                 state.to_process.len(),
                 state
                     .to_process
@@ -148,11 +161,6 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                     .map(|it| it.symbolic_size())
                     .sum::<usize>()
             );
-
-            let todo = state
-                .to_process
-                .pop()
-                .expect("Correctness violation: Nothing to process");
 
             assert!(state.computing.is_none());
             state.computing = Some(IterationState::new_trim::<FWD, BWD>(context, todo));

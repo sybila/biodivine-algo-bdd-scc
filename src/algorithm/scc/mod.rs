@@ -1,8 +1,9 @@
+mod chain;
 mod fwd_bwd;
 mod scc_config;
 
 #[cfg(test)]
-mod llm_tests;
+mod tests;
 
 use crate::algorithm::reachability::{
     BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
@@ -10,6 +11,7 @@ use crate::algorithm::reachability::{
 use crate::algorithm_trait::{GenAlgorithm, Generator};
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 
+pub use chain::{ChainState, ChainStep};
 pub use fwd_bwd::{FwdBwdState, FwdBwdStep};
 pub use scc_config::SccConfig;
 
@@ -46,4 +48,11 @@ pub type FwdBwdSccBfs = Generator<
     FwdBwdState,
     GraphColoredVertices,
     FwdBwdStep<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+>;
+
+pub type ChainScc = Generator<
+    SccConfig,
+    ChainState,
+    GraphColoredVertices,
+    ChainStep<ForwardReachability, BackwardReachability>,
 >;
