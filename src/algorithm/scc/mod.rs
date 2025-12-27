@@ -2,6 +2,9 @@ mod chain;
 mod fwd_bwd;
 mod scc_config;
 
+mod slice;
+pub use slice::slice;
+
 #[cfg(test)]
 mod tests;
 

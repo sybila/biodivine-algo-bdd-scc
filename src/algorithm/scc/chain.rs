@@ -1,6 +1,6 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
-use crate::algorithm::scc::{SccConfig, try_report_scc};
+use crate::algorithm::scc::{SccConfig, slice, try_report_scc};
 use crate::algorithm::trimming::TrimSetting;
 use crate::algorithm_trait::Incomplete::Working;
 use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
@@ -40,12 +40,21 @@ pub struct ChainState {
 
 impl From<&SymbolicAsyncGraph> for ChainState {
     fn from(value: &SymbolicAsyncGraph) -> Self {
+        let sets = slice(value, value.mk_unit_colored_vertices());
+        println!(
+            "Total slices: {}; Largest: {}",
+            sets.len(),
+            sets.iter().map(|it| it.exact_cardinality()).max().unwrap()
+        );
         ChainState {
             computing: IterationState::Idle,
-            to_process: vec![RemainingSet {
-                set: value.mk_unit_colored_vertices(),
-                pivot_hint: value.mk_empty_colored_vertices(),
-            }],
+            to_process: sets
+                .into_iter()
+                .map(|it| RemainingSet {
+                    set: it,
+                    pivot_hint: value.mk_empty_colored_vertices(),
+                })
+                .collect(),
         }
     }
 }

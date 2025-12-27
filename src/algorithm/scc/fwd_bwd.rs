@@ -1,6 +1,6 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
-use crate::algorithm::scc::{SccConfig, try_report_scc};
+use crate::algorithm::scc::{SccConfig, slice, try_report_scc};
 use crate::algorithm::trimming::TrimSetting;
 use crate::algorithm_trait::Incomplete::Working;
 use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
@@ -56,9 +56,15 @@ impl IterationState {
 
 impl From<&SymbolicAsyncGraph> for FwdBwdState {
     fn from(value: &SymbolicAsyncGraph) -> Self {
+        let sets = slice(value, value.mk_unit_colored_vertices());
+        println!(
+            "Total slices: {}; Largest: {}",
+            sets.len(),
+            sets.iter().map(|it| it.exact_cardinality()).max().unwrap()
+        );
         FwdBwdState {
             computing: IterationState::Idle,
-            to_process: vec![value.mk_unit_colored_vertices()],
+            to_process: sets,
         }
     }
 }

@@ -12,6 +12,7 @@ cancel-this = "0.4"
 log = "0.4"
 clap = { version = "4.5", features = ["derive"], optional = true }
 env_logger = { version = "0.11", optional = true }
+num-bigint = "0.4.6"
 
 [dev-dependencies]
 test-generator = "0.3"
