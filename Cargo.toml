@@ -14,11 +14,6 @@ log = "0.4"
 test-generator = "0.3"
 env_logger = "0.11"
 
-[profile.test]
-# Required to parse some larger models during testing.
-# (also helps us to actually cover more cases faster)
-opt-level = 2
-
 [lib]
 name = "biodivine_lib_algo_scc"
 path = "src/lib.rs"
