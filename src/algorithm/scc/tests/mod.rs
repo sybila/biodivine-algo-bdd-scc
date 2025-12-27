@@ -10,6 +10,8 @@ mod llm_tests;
 /// Collect all state numbers from a GraphColoredVertices set.
 /// Returns a sorted vector of state numbers for comparison.
 ///
+/// At the moment, this only supports up to 20 variables.
+///
 /// # Arguments
 ///
 /// * `graph` - The symbolic async graph
@@ -24,6 +26,7 @@ pub fn collect_state_numbers(
     set: &GraphColoredVertices,
     num_vars: usize,
 ) -> Vec<u32> {
+    assert!(num_vars <= 20);
     let mut states = Vec::new();
     let max_state = (1u32 << num_vars) - 1;
     for state in 0..=max_state {
