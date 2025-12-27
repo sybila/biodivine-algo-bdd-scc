@@ -48,7 +48,7 @@ impl IterationState {
         context: &SccConfig,
         value: GraphColoredVertices,
     ) -> Self {
-        if context.should_trim == Sinks {
+        if context.should_trim == Both || context.should_trim == Sinks {
             Self::TrimSinks(TrimSinks::configure(&context.graph, value))
         } else {
             Self::new_trimmed::<FWD, BWD>(context, value)
