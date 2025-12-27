@@ -103,7 +103,7 @@ fn main() {
         bn.num_vars()
     );
     if bn.num_vars() == 0 {
-        println!("Total SCCs enumerated: 0");
+        println!("Network is fully determined by constants.");
         return;
     }
 
