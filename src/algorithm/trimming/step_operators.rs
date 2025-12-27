@@ -13,6 +13,10 @@ pub struct RelativeSinks;
 /// have a predecessor within the given set.
 pub struct RelativeSources;
 
+/// The union of [`RelativeSinks`] and [`RelativeSources`] which allows us to trim a set
+/// from "both sides".
+pub struct RelativeSinksAndSources;
+
 impl ReachabilityStep for RelativeSinks {
     fn step(
         context: &ReachabilityConfig,
@@ -58,5 +62,19 @@ impl ReachabilityStep for RelativeSources {
         }
 
         Ok(state.minus(&has_predecessor))
+    }
+}
+
+impl ReachabilityStep for RelativeSinksAndSources {
+    fn step(
+        context: &ReachabilityConfig,
+        state: &GraphColoredVertices,
+    ) -> Cancellable<GraphColoredVertices> {
+        let sources = RelativeSources::step(context, state)?;
+        if !sources.is_empty() {
+            Ok(sources)
+        } else {
+            RelativeSinks::step(context, state)
+        }
     }
 }

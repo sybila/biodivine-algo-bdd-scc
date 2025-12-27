@@ -6,34 +6,16 @@
 //! The tests are generic and can be used to test any algorithm that implements
 //! the `SccAlgorithm` trait.
 
-use crate::algorithm::scc::{FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm};
+use crate::algorithm::scc::tests::sccs_to_sorted_sets;
+use crate::algorithm::scc::{
+    ChainScc, ChainState, FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm,
+};
 use crate::algorithm::test_utils::llm_example_network::create_test_network;
 use crate::algorithm::test_utils::llm_example_network::sets::ATTRACTOR_2;
 use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
-use crate::algorithm::test_utils::mk_state;
 use crate::algorithm::test_utils::{init_logger, mk_states};
-use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use std::collections::HashSet;
-
-/// Collect all state numbers from a GraphColoredVertices set.
-/// Returns a sorted vector of state numbers for comparison.
-fn collect_state_numbers(
-    graph: &SymbolicAsyncGraph,
-    set: &GraphColoredVertices,
-    num_vars: usize,
-) -> Vec<u32> {
-    let mut states = Vec::new();
-    let max_state = (1u32 << num_vars) - 1;
-    for state in 0..=max_state {
-        let state_set = mk_state(graph, state);
-        if !state_set.intersect(set).is_empty() {
-            states.push(state);
-        }
-    }
-    states.sort();
-    states
-}
 
 /// Verify that the SCCs found match the expected SCCs exactly.
 /// This handles the fact that SCCs can be returned in arbitrary order.
@@ -49,23 +31,11 @@ fn verify_sccs(
         .map(|scc| scc.iter().copied().collect())
         .collect();
 
-    // Convert found SCCs to sets of state numbers
-    let mut found_sets: Vec<HashSet<u32>> = found_sccs
-        .iter()
-        .map(|scc| {
-            collect_state_numbers(graph, scc, num_vars)
-                .into_iter()
-                .collect()
-        })
-        .collect();
+    // Convert found SCCs to sets of state numbers using the shared helper
+    let found_sets = sccs_to_sorted_sets(graph, &found_sccs, num_vars);
 
-    // Sort both for easier comparison (by first element, then size)
+    // Sort expected sets for easier comparison (by size, then sorted state numbers)
     expected_sets.sort_by_cached_key(|s| {
-        let mut v: Vec<u32> = s.iter().copied().collect();
-        v.sort();
-        (v.len(), v)
-    });
-    found_sets.sort_by_cached_key(|s| {
         let mut v: Vec<u32> = s.iter().copied().collect();
         v.sort();
         (v.len(), v)
@@ -513,4 +483,56 @@ fn test_llm_example_network_fwd_bwd_bfs() {
 #[test]
 fn test_complex_network_fwd_bwd_bfs() {
     test_complex_network_impl::<FwdBwdState, FwdBwdSccBfs>()
+}
+
+// ========== Tests for ChainScc ==========
+
+#[test]
+fn test_single_2_cycle_chain() {
+    test_single_2_cycle_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_single_3_cycle_chain() {
+    test_single_3_cycle_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_two_disjoint_2_cycles_chain() {
+    test_two_disjoint_2_cycles_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_multiple_sccs_different_sizes_chain() {
+    test_multiple_sccs_different_sizes_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_scc_with_branching_chain() {
+    test_scc_with_branching_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_only_trivial_sccs_chain() {
+    test_only_trivial_sccs_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_4_cycle_chain() {
+    test_4_cycle_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_scc_with_multiple_paths_chain() {
+    test_scc_with_multiple_paths_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_llm_example_network_chain() {
+    test_llm_example_network_impl::<ChainState, ChainScc>()
+}
+
+#[test]
+fn test_complex_network_chain() {
+    test_complex_network_impl::<ChainState, ChainScc>()
 }

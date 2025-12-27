@@ -1,17 +1,22 @@
+mod chain;
 mod fwd_bwd;
 mod scc_config;
 
 #[cfg(test)]
-mod llm_tests;
+mod tests;
 
+use crate::algorithm::log_set;
 use crate::algorithm::reachability::{
     BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
 };
-use crate::algorithm_trait::{GenAlgorithm, Generator};
+use crate::algorithm_trait::Incomplete::Working;
+use crate::algorithm_trait::{Completable, GenAlgorithm, Generator};
+use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
-
+pub use chain::{ChainState, ChainStep};
 pub use fwd_bwd::{FwdBwdState, FwdBwdStep};
-pub use scc_config::{SccConfig, TrimSetting};
+use log::{debug, info};
+pub use scc_config::SccConfig;
 
 /// A helper trait which allows us to use [`SccAlgorithm`] as shorthand for
 /// `GenAlgorithm<Context = SymbolicAsyncGraph, Output = GraphColoredVertices>`.
@@ -47,3 +52,22 @@ pub type FwdBwdSccBfs = Generator<
     GraphColoredVertices,
     FwdBwdStep<ForwardReachabilityBfs, BackwardReachabilityBfs>,
 >;
+
+pub type ChainScc = Generator<
+    SccConfig,
+    ChainState,
+    GraphColoredVertices,
+    ChainStep<ForwardReachability, BackwardReachability>,
+>;
+
+fn try_report_scc(scc: GraphColoredVertices) -> Completable<Option<GraphColoredVertices>> {
+    if scc.is_empty() {
+        // Iteration is done, but we have not found a new non-trivial SCC.
+        debug!("The SCC is trivial.");
+        Err(Working)
+    } else {
+        // Iteration is done, and we have a new non-trivial SCC.
+        info!("Returning non-trivial SCC ({}).", log_set(&scc));
+        Ok(Some(scc))
+    }
+}
