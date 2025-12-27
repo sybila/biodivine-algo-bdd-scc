@@ -23,7 +23,6 @@ impl ReachabilityStep for RelativeSinks {
         let mut has_successor = context.graph.mk_empty_colored_vertices();
         for var in context.variables.iter().rev() {
             is_cancelled!()?;
-            println!("{}", log_set(&has_successor));
             let var_successor = context.graph.var_can_post_within(*var, state);
             if !var_successor.is_subset(&has_successor) {
                 has_successor = has_successor.union(&var_successor);
