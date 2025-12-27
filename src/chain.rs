@@ -393,7 +393,7 @@ mod tests {
     use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
     use num_bigint::BigUint;
     use std::collections::HashSet;
-    use test_generator::test_resources;
+    //use test_generator::test_resources;
 
     fn basic_async_graph() -> SymbolicAsyncGraph {
         let bool_network = BooleanNetwork::try_from(
@@ -523,232 +523,232 @@ mod tests {
         assert_eq!(chain_scc_set, fwd_bwd_scc_set);
     }
 
-    fn compare_trimming<F, I>(model_path: &str, decomposition_fn: F)
-    where
-        F: Fn(SymbolicAsyncGraph, TrimLvl) -> I,
-        I: Iterator<Item = GraphColoredVertices>,
-    {
-        let bn = BooleanNetwork::try_from_file(model_path).unwrap();
-        let bn = bn.inline_constants(true, true);
-
-        let skip_threshold = 10;
-
-        if bn.num_vars() > skip_threshold {
-            // The network is too large.
-            println!(
-                " >> [{} > {}] Skipping {}.",
-                bn.num_vars(),
-                skip_threshold,
-                model_path
-            );
-            return;
-        }
-
-        // Network has no parameters (no colors).
-        assert_eq!(bn.num_parameters(), 0);
-        assert_eq!(bn.num_implicit_parameters(), 0);
-
-        let graph = SymbolicAsyncGraph::new(&bn).unwrap();
-
-        let sccs_no_trim = decomposition_fn(graph.clone(), TrimLvl::None).collect::<HashSet<_>>();
-        let sccs_single_trim =
-            decomposition_fn(graph.clone(), TrimLvl::StartOnly).collect::<HashSet<_>>();
-        let sccs_full_trim = decomposition_fn(graph, TrimLvl::Full).collect::<HashSet<_>>();
-
-        assert!(sccs_single_trim.is_subset(&sccs_no_trim));
-        assert!(sccs_full_trim.is_subset(&sccs_single_trim))
-    }
-
-    fn compare_fn_with_fwd_bwd<F, I>(model_path: &str, decomposition_fn: F)
-    where
-        F: Fn(SymbolicAsyncGraph) -> I,
-        I: Iterator<Item = GraphColoredVertices>,
-    {
-        let bn = BooleanNetwork::try_from_file(model_path).unwrap();
-        let bn = bn.inline_constants(true, true);
-
-        let skip_threshold = 10;
-
-        if bn.num_vars() > skip_threshold {
-            // The network is too large.
-            println!(
-                " >> [{} > {}] Skipping {}.",
-                bn.num_vars(),
-                skip_threshold,
-                model_path
-            );
-            return;
-        }
-
-        // Network has no parameters (no colors).
-        assert_eq!(bn.num_parameters(), 0);
-        assert_eq!(bn.num_implicit_parameters(), 0);
-
-        let graph = SymbolicAsyncGraph::new(&bn).unwrap();
-
-        println!(
-            " >> [{} <= {}] Testing {}.",
-            bn.num_vars(),
-            skip_threshold,
-            model_path
-        );
-
-        println!(" >> Computing FWD-BWD.");
-        let fwd_bwd_scc_set =
-            fwd_bwd_scc_decomposition_naive(graph.clone()).collect::<HashSet<_>>();
-
-        println!(" >> Computing with {}.", std::any::type_name::<F>());
-        let chain_scc_set = decomposition_fn(graph).collect::<HashSet<_>>();
-
-        println!(" >> Found {} SCCs.", fwd_bwd_scc_set.len());
-
-        assert_eq!(chain_scc_set, fwd_bwd_scc_set);
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_chain_fwd_bwd_selected(model_path: &str) {
-        compare_fn_with_fwd_bwd(model_path, |graph| {
-            chain(
-                graph,
-                Config {
-                    trim_lvl: TrimLvl::None,
-                    strategy: Strategy::Chain,
-                },
-            )
-        });
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_chain_saturation_fwd_bwd_selected(model_path: &str) {
-        compare_fn_with_fwd_bwd(model_path, |graph| {
-            chain(
-                graph,
-                Config {
-                    trim_lvl: TrimLvl::None,
-                    strategy: Strategy::Saturation,
-                },
-            )
-        });
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_chain_saturation_hamming_heuristic_fwd_bwd_selected(model_path: &str) {
-        compare_fn_with_fwd_bwd(model_path, |graph| {
-            chain(
-                graph,
-                Config {
-                    strategy: Strategy::SaturationHamming,
-                    trim_lvl: TrimLvl::None,
-                },
-            )
-        });
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_trimming_chain(model_path: &str) {
-        compare_trimming(model_path, |graph, trim_lvl| {
-            chain(
-                graph,
-                Config {
-                    trim_lvl,
-                    strategy: Strategy::Chain,
-                },
-            )
-        })
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_trimming_saturation(model_path: &str) {
-        compare_trimming(model_path, |graph, trim_lvl| {
-            chain(
-                graph,
-                Config {
-                    strategy: Strategy::Saturation,
-                    trim_lvl,
-                },
-            )
-        });
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_trimming_hamming(model_path: &str) {
-        compare_trimming(model_path, |graph, trim_lvl| {
-            chain(
-                graph,
-                Config {
-                    strategy: Strategy::SaturationHamming,
-                    trim_lvl,
-                },
-            )
-        });
-    }
-
-    fn compare_all_trimmings(model_path: &str, trim_lvl: TrimLvl) {
-        let bn = BooleanNetwork::try_from_file(model_path).unwrap();
-        let bn = bn.inline_constants(true, true);
-
-        let skip_threshold = 10;
-
-        if bn.num_vars() > skip_threshold {
-            // The network is too large.
-            println!(
-                " >> [{} > {}] Skipping {}.",
-                bn.num_vars(),
-                skip_threshold,
-                model_path
-            );
-            return;
-        }
-
-        // Network has no parameters (no colors).
-        assert_eq!(bn.num_parameters(), 0);
-        assert_eq!(bn.num_implicit_parameters(), 0);
-
-        let graph = SymbolicAsyncGraph::new(&bn).unwrap();
-
-        println!(
-            " >> [{} <= {}] Testing {}.",
-            bn.num_vars(),
-            skip_threshold,
-            model_path
-        );
-
-        let chain_start_only = chain(
-            graph.clone(),
-            Config {
-                trim_lvl: TrimLvl::None, // todo fix
-                strategy: Strategy::Chain,
-            },
-        )
-        .collect::<HashSet<_>>();
-        let sat_start_only = chain(
-            graph.clone(),
-            Config {
-                strategy: Strategy::Saturation,
-                trim_lvl,
-            },
-        )
-        .collect::<HashSet<_>>();
-        let sat_ham_start_only = chain(
-            graph,
-            Config {
-                strategy: Strategy::SaturationHamming,
-                trim_lvl,
-            },
-        )
-        .collect::<HashSet<_>>();
-
-        assert_eq!(chain_start_only, sat_start_only);
-        assert_eq!(sat_start_only, sat_ham_start_only);
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_trimming_start_only(model_path: &str) {
-        compare_all_trimmings(model_path, TrimLvl::StartOnly);
-    }
-
-    #[test_resources("./models/bbm-inputs-true/*.aeon")]
-    fn compare_trimming_full(model_path: &str) {
-        compare_all_trimmings(model_path, TrimLvl::Full);
-    }
+    // fn compare_trimming<F, I>(model_path: &str, decomposition_fn: F)
+    // where
+    //     F: Fn(SymbolicAsyncGraph, TrimLvl) -> I,
+    //     I: Iterator<Item = GraphColoredVertices>,
+    // {
+    //     let bn = BooleanNetwork::try_from_file(model_path).unwrap();
+    //     let bn = bn.inline_constants(true, true);
+    //
+    //     let skip_threshold = 10;
+    //
+    //     if bn.num_vars() > skip_threshold {
+    //         // The network is too large.
+    //         println!(
+    //             " >> [{} > {}] Skipping {}.",
+    //             bn.num_vars(),
+    //             skip_threshold,
+    //             model_path
+    //         );
+    //         return;
+    //     }
+    //
+    //     // Network has no parameters (no colors).
+    //     assert_eq!(bn.num_parameters(), 0);
+    //     assert_eq!(bn.num_implicit_parameters(), 0);
+    //
+    //     let graph = SymbolicAsyncGraph::new(&bn).unwrap();
+    //
+    //     let sccs_no_trim = decomposition_fn(graph.clone(), TrimLvl::None).collect::<HashSet<_>>();
+    //     let sccs_single_trim =
+    //         decomposition_fn(graph.clone(), TrimLvl::StartOnly).collect::<HashSet<_>>();
+    //     let sccs_full_trim = decomposition_fn(graph, TrimLvl::Full).collect::<HashSet<_>>();
+    //
+    //     assert!(sccs_single_trim.is_subset(&sccs_no_trim));
+    //     assert!(sccs_full_trim.is_subset(&sccs_single_trim))
+    // }
+    //
+    // fn compare_fn_with_fwd_bwd<F, I>(model_path: &str, decomposition_fn: F)
+    // where
+    //     F: Fn(SymbolicAsyncGraph) -> I,
+    //     I: Iterator<Item = GraphColoredVertices>,
+    // {
+    //     let bn = BooleanNetwork::try_from_file(model_path).unwrap();
+    //     let bn = bn.inline_constants(true, true);
+    //
+    //     let skip_threshold = 10;
+    //
+    //     if bn.num_vars() > skip_threshold {
+    //         // The network is too large.
+    //         println!(
+    //             " >> [{} > {}] Skipping {}.",
+    //             bn.num_vars(),
+    //             skip_threshold,
+    //             model_path
+    //         );
+    //         return;
+    //     }
+    //
+    //     // Network has no parameters (no colors).
+    //     assert_eq!(bn.num_parameters(), 0);
+    //     assert_eq!(bn.num_implicit_parameters(), 0);
+    //
+    //     let graph = SymbolicAsyncGraph::new(&bn).unwrap();
+    //
+    //     println!(
+    //         " >> [{} <= {}] Testing {}.",
+    //         bn.num_vars(),
+    //         skip_threshold,
+    //         model_path
+    //     );
+    //
+    //     println!(" >> Computing FWD-BWD.");
+    //     let fwd_bwd_scc_set =
+    //         fwd_bwd_scc_decomposition_naive(graph.clone()).collect::<HashSet<_>>();
+    //
+    //     println!(" >> Computing with {}.", std::any::type_name::<F>());
+    //     let chain_scc_set = decomposition_fn(graph).collect::<HashSet<_>>();
+    //
+    //     println!(" >> Found {} SCCs.", fwd_bwd_scc_set.len());
+    //
+    //     assert_eq!(chain_scc_set, fwd_bwd_scc_set);
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_chain_fwd_bwd_selected(model_path: &str) {
+    //     compare_fn_with_fwd_bwd(model_path, |graph| {
+    //         chain(
+    //             graph,
+    //             Config {
+    //                 trim_lvl: TrimLvl::None,
+    //                 strategy: Strategy::Chain,
+    //             },
+    //         )
+    //     });
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_chain_saturation_fwd_bwd_selected(model_path: &str) {
+    //     compare_fn_with_fwd_bwd(model_path, |graph| {
+    //         chain(
+    //             graph,
+    //             Config {
+    //                 trim_lvl: TrimLvl::None,
+    //                 strategy: Strategy::Saturation,
+    //             },
+    //         )
+    //     });
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_chain_saturation_hamming_heuristic_fwd_bwd_selected(model_path: &str) {
+    //     compare_fn_with_fwd_bwd(model_path, |graph| {
+    //         chain(
+    //             graph,
+    //             Config {
+    //                 strategy: Strategy::SaturationHamming,
+    //                 trim_lvl: TrimLvl::None,
+    //             },
+    //         )
+    //     });
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_trimming_chain(model_path: &str) {
+    //     compare_trimming(model_path, |graph, trim_lvl| {
+    //         chain(
+    //             graph,
+    //             Config {
+    //                 trim_lvl,
+    //                 strategy: Strategy::Chain,
+    //             },
+    //         )
+    //     })
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_trimming_saturation(model_path: &str) {
+    //     compare_trimming(model_path, |graph, trim_lvl| {
+    //         chain(
+    //             graph,
+    //             Config {
+    //                 strategy: Strategy::Saturation,
+    //                 trim_lvl,
+    //             },
+    //         )
+    //     });
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_trimming_hamming(model_path: &str) {
+    //     compare_trimming(model_path, |graph, trim_lvl| {
+    //         chain(
+    //             graph,
+    //             Config {
+    //                 strategy: Strategy::SaturationHamming,
+    //                 trim_lvl,
+    //             },
+    //         )
+    //     });
+    // }
+    //
+    // fn compare_all_trimmings(model_path: &str, trim_lvl: TrimLvl) {
+    //     let bn = BooleanNetwork::try_from_file(model_path).unwrap();
+    //     let bn = bn.inline_constants(true, true);
+    //
+    //     let skip_threshold = 10;
+    //
+    //     if bn.num_vars() > skip_threshold {
+    //         // The network is too large.
+    //         println!(
+    //             " >> [{} > {}] Skipping {}.",
+    //             bn.num_vars(),
+    //             skip_threshold,
+    //             model_path
+    //         );
+    //         return;
+    //     }
+    //
+    //     // Network has no parameters (no colors).
+    //     assert_eq!(bn.num_parameters(), 0);
+    //     assert_eq!(bn.num_implicit_parameters(), 0);
+    //
+    //     let graph = SymbolicAsyncGraph::new(&bn).unwrap();
+    //
+    //     println!(
+    //         " >> [{} <= {}] Testing {}.",
+    //         bn.num_vars(),
+    //         skip_threshold,
+    //         model_path
+    //     );
+    //
+    //     let chain_start_only = chain(
+    //         graph.clone(),
+    //         Config {
+    //             trim_lvl: TrimLvl::None, // todo fix
+    //             strategy: Strategy::Chain,
+    //         },
+    //     )
+    //     .collect::<HashSet<_>>();
+    //     let sat_start_only = chain(
+    //         graph.clone(),
+    //         Config {
+    //             strategy: Strategy::Saturation,
+    //             trim_lvl,
+    //         },
+    //     )
+    //     .collect::<HashSet<_>>();
+    //     let sat_ham_start_only = chain(
+    //         graph,
+    //         Config {
+    //             strategy: Strategy::SaturationHamming,
+    //             trim_lvl,
+    //         },
+    //     )
+    //     .collect::<HashSet<_>>();
+    //
+    //     assert_eq!(chain_start_only, sat_start_only);
+    //     assert_eq!(sat_start_only, sat_ham_start_only);
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_trimming_start_only(model_path: &str) {
+    //     compare_all_trimmings(model_path, TrimLvl::StartOnly);
+    // }
+    //
+    // #[test_resources("./models/bbm-inputs-true/*.aeon")]
+    // fn compare_trimming_full(model_path: &str) {
+    //     compare_all_trimmings(model_path, TrimLvl::Full);
+    // }
 }

@@ -3,21 +3,21 @@ name = "biodivine-lib-algo-scc"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+build-binary = ["clap", "env_logger"]
+
 [dependencies]
 biodivine-lib-bdd = ">=0.6.2, <1.0.0"
 biodivine-lib-param-bn = ">=0.6.2, <1.0.0"
 num-bigint = "0.4"
-cancel-this = "0.3"
+cancel-this = "0.4"
 log = "0.4"
+clap = { version = "4.5", features = ["derive"], optional = true }
+env_logger = { version = "0.11", optional = true }
 
 [dev-dependencies]
 test-generator = "0.3"
 env_logger = "0.11"
-
-[profile.test]
-# Required to parse some larger models during testing.
-# (also helps us to actually cover more cases faster)
-opt-level = 2
 
 [lib]
 name = "biodivine_lib_algo_scc"
@@ -30,3 +30,8 @@ path = "src/bin/chain.rs"
 [[bin]]
 name = "fwd_bwd"
 path = "src/bin/fwd_bwd.rs"
+
+[[bin]]
+name = "scc"
+path = "src/bin/scc.rs"
+required-features = ["build-binary"]
