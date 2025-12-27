@@ -1,12 +1,9 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
 use crate::algorithm::scc::SccConfig;
-use crate::algorithm::scc::scc_config::TrimSetting;
-use crate::algorithm::scc::scc_config::TrimSetting::Both;
-use crate::algorithm::trimming::{TrimSinks, TrimSources};
+use crate::algorithm::trimming::TrimSetting;
 use crate::algorithm_trait::Incomplete::Working;
 use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
-use TrimSetting::{Sinks, Sources};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use log::{debug, info};
@@ -19,8 +16,7 @@ pub struct FwdBwdState {
 }
 
 enum IterationState {
-    TrimSources(TrimSources),
-    TrimSinks(TrimSinks),
+    Trimming(DynComputable<GraphColoredVertices>),
     FwdBwd {
         universe: GraphColoredVertices,
         forward: DynComputable<GraphColoredVertices>,
@@ -33,29 +29,18 @@ pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
 }
 
 impl IterationState {
-    fn new<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
+    fn new_trim<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
         context: &SccConfig,
         value: GraphColoredVertices,
     ) -> Self {
-        if context.should_trim == Both || context.should_trim == Sources {
-            Self::TrimSources(TrimSources::configure(&context.graph, value))
+        if context.should_trim == TrimSetting::None {
+            Self::new_fwd_bwd::<FWD, BWD>(context, value)
         } else {
-            Self::new_trimmed_sources::<FWD, BWD>(context, value)
+            Self::Trimming(context.should_trim.build_computation(&context.graph, value))
         }
     }
 
-    fn new_trimmed_sources<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
-        context: &SccConfig,
-        value: GraphColoredVertices,
-    ) -> Self {
-        if context.should_trim == Both || context.should_trim == Sinks {
-            Self::TrimSinks(TrimSinks::configure(&context.graph, value))
-        } else {
-            Self::new_trimmed::<FWD, BWD>(context, value)
-        }
-    }
-
-    fn new_trimmed<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
+    fn new_fwd_bwd<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
         context: &SccConfig,
         value: GraphColoredVertices,
     ) -> Self {
@@ -87,17 +72,9 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
     ) -> Completable<Option<GraphColoredVertices>> {
         if let Some(iteration) = state.computing.as_mut() {
             match iteration {
-                IterationState::TrimSources(trim) => {
+                IterationState::Trimming(trim) => {
                     let trimmed = trim.try_compute()?;
-                    state.computing = Some(IterationState::new_trimmed_sources::<FWD, BWD>(
-                        context,
-                        trimmed.clone(),
-                    ));
-                    Err(Working)
-                }
-                IterationState::TrimSinks(trim) => {
-                    let trimmed = trim.try_compute()?;
-                    state.computing = Some(IterationState::new_trimmed::<FWD, BWD>(
+                    state.computing = Some(IterationState::new_fwd_bwd::<FWD, BWD>(
                         context,
                         trimmed.clone(),
                     ));
@@ -189,7 +166,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                 .expect("Correctness violation: Nothing to process");
 
             assert!(state.computing.is_none());
-            state.computing = Some(IterationState::new::<FWD, BWD>(context, todo));
+            state.computing = Some(IterationState::new_trim::<FWD, BWD>(context, todo));
             Err(Working)
         }
     }

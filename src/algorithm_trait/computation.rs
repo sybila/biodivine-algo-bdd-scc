@@ -168,3 +168,18 @@ impl<
         Computation::configure(context, initial_state)
     }
 }
+
+/// Computation step that does nothing and simply considers the result to be already computed.
+pub struct IdentityComputationStep;
+
+/// A computation that simply "does nothing" and returns the initial state as output.
+pub type IdentityComputation<OUTPUT> =
+    Computation<(), OUTPUT, OUTPUT, IdentityComputationStep, Derived>;
+
+impl<CONTEXT, STATE: Into<OUTPUT>, OUTPUT> ComputationStep<CONTEXT, STATE, OUTPUT>
+    for IdentityComputationStep
+{
+    fn step(_context: &CONTEXT, _state: &mut STATE) -> Completable<()> {
+        Ok(())
+    }
+}

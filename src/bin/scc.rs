@@ -1,4 +1,5 @@
-use biodivine_lib_algo_scc::algorithm::scc::{FwdBwdScc, FwdBwdSccBfs, SccConfig, TrimSetting};
+use biodivine_lib_algo_scc::algorithm::scc::{FwdBwdScc, FwdBwdSccBfs, SccConfig};
+use biodivine_lib_algo_scc::algorithm::trimming::TrimSetting;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;

@@ -1,12 +1,5 @@
+use crate::algorithm::trimming::TrimSetting;
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
-
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub enum TrimSetting {
-    Both,
-    Sources,
-    Sinks,
-    None,
-}
 
 /// A configuration object for various reachability problems.
 #[derive(Clone)]

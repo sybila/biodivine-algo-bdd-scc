@@ -95,7 +95,10 @@ use std::fmt::{Display, Formatter};
 mod computation;
 mod generator;
 
-pub use computation::{Computation, ComputationStep, ComputationStepAndConvert, Derived, Manual};
+pub use computation::{
+    Computation, ComputationStep, ComputationStepAndConvert, Derived, IdentityComputation,
+    IdentityComputationStep, Manual,
+};
 pub use generator::{CollectorStep, Generator, GeneratorStep};
 
 pub trait Algorithm<CONTEXT, STATE, OUTPUT>: Computable<OUTPUT> {
