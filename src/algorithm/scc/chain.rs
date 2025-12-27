@@ -1,6 +1,6 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
-use crate::algorithm::scc::SccConfig;
+use crate::algorithm::scc::{SccConfig, try_report_scc};
 use crate::algorithm::trimming::TrimSetting;
 use crate::algorithm_trait::Incomplete::Working;
 use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
@@ -249,15 +249,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                     let valid_colors = scc.minus(&scc.pick_vertex()).colors();
                     let scc = scc.intersect_colors(&valid_colors);
                     state.computing = None;
-                    if scc.is_empty() {
-                        // Iteration is done, but we have not found a new non-trivial SCC.
-                        debug!("The SCC is trivial.");
-                        Err(Working)
-                    } else {
-                        // Iteration is done, and we have a new non-trivial SCC.
-                        info!("Returning non-trivial SCC ({}).", log_set(&scc));
-                        Ok(Some(scc))
-                    }
+                    try_report_scc(scc)
                 }
             }
         } else {
