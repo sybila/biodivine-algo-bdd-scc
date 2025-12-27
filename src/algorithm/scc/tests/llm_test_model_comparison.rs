@@ -73,7 +73,7 @@ fn test_scc_comparison_impl(model_path: &str) -> Cancellable<()> {
 
 /// Test SCC algorithms comparison on model files.
 ///
-/// The entire test has a 5s timeout. The test passes if it completes or times out.
+/// The entire test has a 2s timeout. The test passes if it completes or times out.
 #[test_resources("./models/bbm-inputs-true/*.aeon")]
 fn test_scc_fwd_bwd_vs_chain_comparison(model_path: &str) {
     let five_seconds = Duration::from_secs(2);
