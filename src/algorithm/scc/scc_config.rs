@@ -43,7 +43,7 @@ impl SccConfig {
         self
     }
 
-    /// Enabled/disable long lived filtering (default: false).
+    /// Enable/disable long lived filtering (default: false).
     pub fn filter_long_lived(mut self, filter: bool) -> Self {
         self.filter_long_lived = filter;
         self

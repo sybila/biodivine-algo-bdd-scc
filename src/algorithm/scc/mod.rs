@@ -53,6 +53,17 @@ pub type FwdBwdSccBfs = Generator<
     FwdBwdStep<ForwardReachabilityBfs, BackwardReachabilityBfs>,
 >;
 
+/// An SCC detection algorithm that uses "chain-like" exploration. It can sometimes work on
+/// larger networks where fwd-bwd fails. But in cases where `fwd-bwd`` works, `fwd-bwd` is
+/// often faster because it is quicker to partition the state space into smaller chunks.
+///
+/// Basic algorithm idea:
+///  - Pick a pivot vertex (using a hint set if available).
+///  - Compute a backwards reachable set and SCC inside this set (using forward).
+///  - Recursively continue in `BWD \ SCC` and `ALL \ BWD`.
+///  - The pivot hints are the immediate successors/predecessors of the SCC.
+///  - If trimming removes pivot hints, we replace them with immediate predecessors/successors
+///    of the trimmed set.
 pub type ChainScc = Generator<
     SccConfig,
     ChainState,
@@ -70,23 +81,23 @@ fn try_report_scc(
         Err(Working)
     } else {
         // Iteration is done, and we have a new non-trivial SCC.
-        let scc = if context.filter_long_lived {
+        let reduced_scc = if context.filter_long_lived {
             retain_long_lived(&context.graph, &scc)
         } else {
-            scc
+            scc.clone()
         };
 
-        if scc.is_empty() {
+        if reduced_scc.is_empty() {
             info!("Skipping short-lived SCC ({}).", log_set(&scc));
             return Err(Working);
         }
 
-        info!("Returning non-trivial SCC ({}).", log_set(&scc));
-        Ok(Some(scc))
+        info!("Returning non-trivial SCC ({}).", log_set(&reduced_scc));
+        Ok(Some(reduced_scc))
     }
 }
 
-/// Return a subset of states that are long-lived; they cannot be escaped by updating a
+/// Return a subset of states that are long-lived, meaning the set cannot be escaped by updating a
 /// single variable. This is evaluated per-color, i.e., each color is either fully retained
 /// or fully removed.
 fn retain_long_lived(
@@ -105,11 +116,11 @@ fn retain_long_lived(
         set.clone()
     } else {
         // For colored sets, this is a bit more complicated
-        let safe_colors = graph.mk_empty_colors();
+        let mut safe_colors = graph.mk_empty_colors();
         for var in graph.variables() {
             let can_post_out = graph.var_can_post_out(var, set);
             let stays_inside = set.minus(&can_post_out);
-            safe_colors.union(&stays_inside.colors());
+            safe_colors = safe_colors.union(&stays_inside.colors());
             if safe_colors == colors {
                 return set.clone();
             }
