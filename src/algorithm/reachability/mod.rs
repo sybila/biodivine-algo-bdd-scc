@@ -1,6 +1,6 @@
-use crate::algorithm_trait::{Algorithm, Computation};
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::Cancellable;
+use computation_process::{Algorithm, Computation};
 
 #[cfg(test)]
 mod tests;

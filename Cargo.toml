@@ -12,10 +12,15 @@ cancel-this = "0.4"
 log = "0.4"
 clap = { version = "4.5", features = ["derive"], optional = true }
 env_logger = { version = "0.11", optional = true }
+computation-process = { path = "../computation-process" }
 
 [dev-dependencies]
 test-generator = "0.3"
 env_logger = "0.11"
+
+# LTO is recommended to reduce overhead from `computation-process` and `cancel-this`.
+[profile.release]
+lto = true
 
 [lib]
 name = "biodivine_lib_algo_scc"

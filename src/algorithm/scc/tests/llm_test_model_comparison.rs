@@ -8,6 +8,7 @@ use crate::algorithm::scc::{ChainScc, FwdBwdScc};
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
+use computation_process::{Computable, GenAlgorithm, Stateful};
 use std::time::Duration;
 use test_generator::test_resources;
 

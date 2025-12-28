@@ -1,9 +1,9 @@
 use crate::algorithm::reachability::{ReachabilityConfig, ReachabilityStep};
 use crate::algorithm::{log_set, simple_type_name};
-use crate::algorithm_trait::Incomplete::Working;
-use crate::algorithm_trait::{Completable, ComputationStep};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
+use computation_process::Incomplete::Suspended;
+use computation_process::{Completable, ComputationStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
@@ -15,7 +15,10 @@ impl<S: ReachabilityStep>
     ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>
     for IterativeUnion<S>
 {
-    fn step(context: &ReachabilityConfig, state: &mut GraphColoredVertices) -> Completable<()> {
+    fn step(
+        context: &ReachabilityConfig,
+        state: &mut GraphColoredVertices,
+    ) -> Completable<GraphColoredVertices> {
         let to_union = S::step(context, state)?;
         if to_union.is_subset(state) {
             info!(
@@ -23,7 +26,7 @@ impl<S: ReachabilityStep>
                 simple_type_name::<S>(),
                 log_set(state)
             );
-            Ok(())
+            Ok(state.clone())
         } else {
             *state = state.union(&to_union);
             debug!(
@@ -31,7 +34,7 @@ impl<S: ReachabilityStep>
                 simple_type_name::<S>(),
                 log_set(state)
             );
-            Err(Working)
+            Err(Suspended)
         }
     }
 }

@@ -5,15 +5,13 @@ mod scc_config;
 #[cfg(test)]
 mod tests;
 
-use crate::algorithm::log_set;
 use crate::algorithm::reachability::{
     BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
 };
-use crate::algorithm_trait::Incomplete::Working;
-use crate::algorithm_trait::{Completable, GenAlgorithm, Generator};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 pub use chain::{ChainState, ChainStep};
+use computation_process::{GenAlgorithm, Generator};
 pub use fwd_bwd::{FwdBwdState, FwdBwdStep};
 use log::info;
 pub use scc_config::SccConfig;
@@ -71,30 +69,29 @@ pub type ChainScc = Generator<
     ChainStep<ForwardReachability, BackwardReachability>,
 >;
 
-fn try_report_scc(
-    context: &SccConfig,
-    scc: GraphColoredVertices,
-) -> Completable<Option<GraphColoredVertices>> {
-    if scc.is_empty() {
-        // Iteration is done, but we have not found a new non-trivial SCC.
+/// Remove colors that correspond to trivial and short-lived SCCs (if configured to do so).
+fn filter_scc(context: &SccConfig, scc: GraphColoredVertices) -> Option<GraphColoredVertices> {
+    // First, remove all colors in which the SCC is trivial.
+    let valid_colors = scc.minus(&scc.pick_vertex()).colors();
+    let non_trivial_scc = scc.intersect_colors(&valid_colors);
+
+    if non_trivial_scc.is_empty() {
         info!("The SCC is trivial.");
-        Err(Working)
-    } else {
-        // Iteration is done, and we have a new non-trivial SCC.
-        let reduced_scc = if context.filter_long_lived {
-            retain_long_lived(&context.graph, &scc)
-        } else {
-            scc.clone()
-        };
-
-        if reduced_scc.is_empty() {
-            info!("Skipping short-lived SCC ({}).", log_set(&scc));
-            return Err(Working);
-        }
-
-        info!("Returning non-trivial SCC ({}).", log_set(&reduced_scc));
-        Ok(Some(reduced_scc))
+        return None;
     }
+
+    let long_lived_scc = if context.filter_long_lived {
+        retain_long_lived(&context.graph, &non_trivial_scc)
+    } else {
+        non_trivial_scc.clone()
+    };
+
+    if long_lived_scc.is_empty() {
+        info!("The SCC is short-lived.");
+        return None;
+    }
+
+    Some(long_lived_scc)
 }
 
 /// Return a subset of states that are long-lived, meaning the set cannot be escaped by updating a

@@ -6,8 +6,8 @@ mod tests;
 
 use crate::algorithm::reachability::ReachabilityComputation;
 use crate::algorithm::trimming::step_operators::RelativeSinksAndSources;
-use crate::algorithm_trait::{DynComputable, IdentityComputation};
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use computation_process::{Computable, ComputableIdentity, DynComputable, Stateful};
 pub use iterative_subtraction::IterativeSubtraction;
 pub use step_operators::{RelativeSinks, RelativeSources};
 
@@ -31,13 +31,10 @@ impl TrimSetting {
         set: GraphColoredVertices,
     ) -> DynComputable<GraphColoredVertices> {
         match self {
-            TrimSetting::Both => Box::new(TrimSinksAndSources::configure(graph, set)),
-            TrimSetting::Sources => Box::new(TrimSources::configure(graph, set)),
-            TrimSetting::Sinks => Box::new(TrimSinks::configure(graph, set)),
-            TrimSetting::None => Box::new(IdentityComputation::<GraphColoredVertices>::configure(
-                (),
-                set,
-            )),
+            TrimSetting::Both => TrimSinksAndSources::configure(graph, set).dyn_computable(),
+            TrimSetting::Sources => TrimSources::configure(graph, set).dyn_computable(),
+            TrimSetting::Sinks => TrimSinks::configure(graph, set).dyn_computable(),
+            TrimSetting::None => ComputableIdentity::from(set).dyn_computable(),
         }
     }
 }
