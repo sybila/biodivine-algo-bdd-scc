@@ -252,10 +252,10 @@ impl Step1 {
             }
         }
 
-        let pivot = if self.pivot_hint.is_empty() {
+        let pivot = if pivot_hint.is_empty() {
             universe.pick_vertex()
         } else {
-            self.pivot_hint.pick_vertex()
+            pivot_hint.pick_vertex()
         };
 
         let graph = context.graph.restrict(&universe);
