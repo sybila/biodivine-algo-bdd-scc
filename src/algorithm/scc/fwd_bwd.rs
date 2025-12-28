@@ -1,63 +1,26 @@
 use crate::algorithm::log_set;
 use crate::algorithm::reachability::ReachabilityAlgorithm;
-use crate::algorithm::scc::{SccConfig, retain_long_lived, try_report_scc};
-use crate::algorithm::trimming::TrimSetting;
-use crate::algorithm_trait::Incomplete::Working;
-use crate::algorithm_trait::{Completable, DynComputable, GeneratorStep};
+use crate::algorithm::scc::{SccConfig, filter_scc};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use computation_process::Incomplete::Suspended;
+use computation_process::{Completable, DynComputable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
 pub struct FwdBwdState {
-    computing: IterationState,
+    computing: Step,
     to_process: Vec<GraphColoredVertices>,
-}
-
-enum IterationState {
-    Idle,
-    Trimming(DynComputable<GraphColoredVertices>),
-    FwdBwd {
-        universe: GraphColoredVertices,
-        forward: DynComputable<GraphColoredVertices>,
-        backward: DynComputable<GraphColoredVertices>,
-    },
 }
 
 pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
     _phantom: PhantomData<(FWD, BWD)>,
 }
 
-impl IterationState {
-    fn new_trim<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
-        context: &SccConfig,
-        value: GraphColoredVertices,
-    ) -> Self {
-        if context.should_trim == TrimSetting::None {
-            Self::new_fwd_bwd::<FWD, BWD>(context, value)
-        } else {
-            Self::Trimming(context.should_trim.build_computation(&context.graph, value))
-        }
-    }
-
-    fn new_fwd_bwd<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>(
-        context: &SccConfig,
-        value: GraphColoredVertices,
-    ) -> Self {
-        let graph = context.graph.restrict(&value);
-        let pivot = value.pick_vertex();
-        Self::FwdBwd {
-            forward: FWD::configure_dyn(graph.clone(), pivot.clone()),
-            backward: BWD::configure_dyn(graph.clone(), pivot.clone()),
-            universe: value,
-        }
-    }
-}
-
 impl From<&SymbolicAsyncGraph> for FwdBwdState {
     fn from(value: &SymbolicAsyncGraph) -> Self {
         FwdBwdState {
-            computing: IterationState::Idle,
+            computing: Step::Idle,
             to_process: vec![value.mk_unit_colored_vertices()],
         }
     }
@@ -71,38 +34,62 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
         state: &mut FwdBwdState,
     ) -> Completable<Option<GraphColoredVertices>> {
         match &mut state.computing {
-            IterationState::Trimming(trim) => {
-                let trimmed = trim.try_compute()?;
+            Step::Idle => {
+                // Pick a new state for processing.
 
-                if trimmed.is_empty() {
-                    state.computing = IterationState::Idle;
-                    debug!("Candidate set trimmed to empty.");
-                    return Err(Working);
-                }
+                let Some(todo) = state.to_process.pop() else {
+                    // If there is nothing to process, we are done.
+                    return Ok(None);
+                };
 
-                debug!("Candidate set trimmed ({}).", log_set(trimmed));
+                let Some(todo) = context.apply_long_lived_filter(&todo) else {
+                    // The set is not long-lived, we can ignore it.
+                    debug!("Candidate set empty after long-lived filtering.");
+                    return Err(Suspended);
+                };
 
-                state.computing = IterationState::new_fwd_bwd::<FWD, BWD>(context, trimmed.clone());
-                Err(Working)
+                info!(
+                    "Start processing ({}); {} sets remaining (BDD nodes={})",
+                    log_set(&todo),
+                    state.to_process.len(),
+                    state
+                        .to_process
+                        .iter()
+                        .map(|it| it.symbolic_size())
+                        .sum::<usize>()
+                );
+
+                state.computing = Step::Trimming(Step1::new(context, todo));
+                Err(Suspended)
             }
-            IterationState::FwdBwd {
-                forward,
-                backward,
-                universe,
-            } => {
-                // If we are processing a specific component right now, continue the iteration.
-                let backward = backward.try_compute()?;
-                let forward = forward.try_compute()?;
-                let scc = backward.intersect(forward);
-                debug!("Extracted raw SCC ({})", log_set(&scc));
+            Step::Trimming(step) => {
+                let Some(trimmed) = step.try_advance::<BWD>(context)? else {
+                    // If the set is empty after trimming/filtering, reset the state and stop.
+                    state.computing = Step::Idle;
+                    return Err(Suspended);
+                };
+
+                state.computing = Step::Backward(trimmed);
+                Err(Suspended)
+            }
+            Step::Backward(step) => {
+                state.computing = Step::Forward(step.try_advance::<FWD>(context)?);
+                Err(Suspended)
+            }
+            Step::Forward(step) => {
+                let result = step.try_advance(context)?;
+                let scc = result.scc;
+                let forward = result.forward;
+                let backward = result.backward;
+                let universe = result.universe;
 
                 // Enqueue the remaining states for further processing.
-                let remaining_backward = backward.minus(forward);
-                let remaining_forward = forward.minus(backward);
-                let remaining_rest = universe.minus(backward).minus(forward);
+                let remaining_backward = backward.minus(&forward);
+                let remaining_forward = forward.minus(&backward);
+                let remaining_rest = universe.minus(&backward).minus(&forward);
 
                 debug!(
-                    "Pushed remaining FWD ({}), BWD ({}), and REST ({}) sets.",
+                    "Adding remaining FWD ({}), BWD ({}), and REST ({}) sets.",
                     log_set(&remaining_forward),
                     log_set(&remaining_backward),
                     log_set(&remaining_rest),
@@ -118,52 +105,116 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                     state.to_process.push(remaining_rest);
                 }
 
-                // Remove colors where the SCC is a singleton state:
-                let valid_colors = scc.minus(&scc.pick_vertex()).colors();
-                let scc = scc.intersect_colors(&valid_colors);
-                state.computing = IterationState::Idle;
-                try_report_scc(context, scc)
-            }
-            IterationState::Idle => {
-                // We are in-between iterations. We need to pick a new set for processing.
-                // In theory, this choice does not matter because all sets need to be processed
-                // eventually.
-
-                if state.to_process.is_empty() {
-                    // If there is nothing to process, we are done.
-                    return Ok(None);
-                }
-
-                let todo = state
-                    .to_process
-                    .pop()
-                    .expect("Correctness violation: Nothing to process");
-
-                let todo = if context.filter_long_lived {
-                    retain_long_lived(&context.graph, &todo)
+                state.computing = Step::Idle;
+                if let Some(scc) = scc {
+                    Ok(Some(scc))
                 } else {
-                    todo
-                };
-
-                if todo.is_empty() {
-                    info!("Skipping short-lived set ({}).", log_set(&todo));
-                    return Err(Working);
+                    Err(Suspended)
                 }
-
-                info!(
-                    "Start processing ({}); {} sets remaining (BDD nodes={})",
-                    log_set(&todo),
-                    state.to_process.len(),
-                    state
-                        .to_process
-                        .iter()
-                        .map(|it| it.symbolic_size())
-                        .sum::<usize>()
-                );
-
-                state.computing = IterationState::new_trim::<FWD, BWD>(context, todo);
-                Err(Working)
             }
         }
+    }
+}
+
+enum Step {
+    Idle,
+    Trimming(Step1),
+    Backward(Step2),
+    Forward(Step3),
+}
+
+struct Step1 {
+    universe: DynComputable<GraphColoredVertices>,
+}
+
+struct Step2 {
+    pivot: GraphColoredVertices,
+    universe: GraphColoredVertices,
+    backward: DynComputable<GraphColoredVertices>,
+}
+
+struct Step3 {
+    universe: GraphColoredVertices,
+    backward: GraphColoredVertices,
+    forward: DynComputable<GraphColoredVertices>,
+}
+
+struct IterationResult {
+    universe: GraphColoredVertices,
+    forward: GraphColoredVertices,
+    backward: GraphColoredVertices,
+    scc: Option<GraphColoredVertices>,
+}
+
+impl Step1 {
+    pub fn new(context: &SccConfig, set: GraphColoredVertices) -> Step1 {
+        Step1 {
+            universe: context.should_trim.build_computation(&context.graph, set),
+        }
+    }
+
+    pub fn try_advance<BWD: ReachabilityAlgorithm>(
+        &mut self,
+        context: &SccConfig,
+    ) -> Completable<Option<Step2>> {
+        let universe = self.universe.try_compute()?;
+
+        if universe.is_empty() {
+            debug!("Candidate set empty after trimming.");
+            return Ok(None);
+        }
+
+        let Some(universe) = context.apply_long_lived_filter(&universe) else {
+            debug!("Candidate set empty after trimming and long-term filtering.");
+            return Ok(None);
+        };
+
+        let graph = context.graph.restrict(&universe);
+        let pivot = universe.pick_vertex();
+        Ok(Some(Step2 {
+            backward: BWD::configure(&graph, pivot.clone()).dyn_computable(),
+            universe,
+            pivot,
+        }))
+    }
+}
+
+impl Step2 {
+    pub fn try_advance<FWD: ReachabilityAlgorithm>(
+        &mut self,
+        context: &SccConfig,
+    ) -> Completable<Step3> {
+        let backward = self.backward.try_compute()?;
+        let graph = context.graph.restrict(&self.universe);
+
+        let mut result = Step3 {
+            forward: FWD::configure(&graph, self.pivot.clone()).dyn_computable(),
+            universe: context.graph.mk_empty_colored_vertices(),
+            backward,
+        };
+
+        std::mem::swap(&mut result.universe, &mut self.universe);
+
+        Ok(result)
+    }
+}
+
+impl Step3 {
+    pub fn try_advance(&mut self, context: &SccConfig) -> Completable<IterationResult> {
+        let forward = self.forward.try_compute()?;
+        let scc = forward.intersect(&self.backward);
+        debug!("Extracted raw SCC ({})", log_set(&scc));
+
+        let mut result = IterationResult {
+            universe: context.graph.mk_empty_colored_vertices(),
+            backward: context.graph.mk_empty_colored_vertices(),
+            scc: filter_scc(context, scc),
+            forward,
+        };
+
+        std::mem::swap(&mut result.universe, &mut self.universe);
+        std::mem::swap(&mut result.backward, &mut self.backward);
+
+        Ok(result)
     }
 }

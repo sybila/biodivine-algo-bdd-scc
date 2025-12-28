@@ -10,12 +10,17 @@ build-binary = ["clap", "env_logger"]
 biodivine-lib-param-bn = ">=0.6.2, <1.0.0"
 cancel-this = "0.4"
 log = "0.4"
+computation-process = "0.1"
 clap = { version = "4.5", features = ["derive"], optional = true }
 env_logger = { version = "0.11", optional = true }
 
 [dev-dependencies]
 test-generator = "0.3"
 env_logger = "0.11"
+
+# LTO is recommended to reduce overhead from `computation-process` and `cancel-this`.
+[profile.release]
+lto = true
 
 [lib]
 name = "biodivine_lib_algo_scc"

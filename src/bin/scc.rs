@@ -4,6 +4,7 @@ use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
 use clap::Parser;
+use computation_process::Stateful;
 use env_logger::Builder;
 use log::LevelFilter;
 

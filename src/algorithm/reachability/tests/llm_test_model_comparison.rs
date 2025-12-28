@@ -8,11 +8,11 @@ use crate::algorithm::reachability::{
     BfsPredecessors, BfsSuccessors, IterativeUnion, ReachabilityComputation, ReachabilityConfig,
     SaturationPredecessors, SaturationSuccessors,
 };
-use crate::algorithm_trait::ComputationStep;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
+use computation_process::{Algorithm, ComputationStep};
 use std::time::Duration;
 use test_generator::test_resources;
 
@@ -25,8 +25,10 @@ use test_generator::test_resources;
 /// 4. Remove the reachable set from remaining states and continue
 fn test_reachability_comparison_impl<VariantA, VariantB>(model_path: &str) -> Cancellable<()>
 where
-    VariantA: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
-    VariantB: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    VariantA:
+        ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
+    VariantB:
+        ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     // Load the model
     let bn = BooleanNetwork::try_from_file(model_path)

@@ -15,6 +15,7 @@ use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
 use crate::algorithm::test_utils::mk_states;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
+use computation_process::Stateful;
 use std::collections::HashSet;
 
 /// Create a test network with two non-trivial SCCs:

@@ -1,5 +1,7 @@
+use crate::algorithm::scc::retain_long_lived;
 use crate::algorithm::trimming::TrimSetting;
-use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
+use biodivine_lib_param_bn::biodivine_std::traits::Set;
+use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 
 /// A configuration object for various reachability problems.
 #[derive(Clone)]
@@ -47,5 +49,23 @@ impl SccConfig {
     pub fn filter_long_lived(mut self, filter: bool) -> Self {
         self.filter_long_lived = filter;
         self
+    }
+
+    /// If long-lived filtering is enabled, apply it. Otherwise, return the same set.
+    pub fn apply_long_lived_filter(
+        &self,
+        set: &GraphColoredVertices,
+    ) -> Option<GraphColoredVertices> {
+        let filtered = if self.filter_long_lived {
+            retain_long_lived(&self.graph, set)
+        } else {
+            set.clone()
+        };
+
+        if filtered.is_empty() {
+            None
+        } else {
+            Some(filtered)
+        }
     }
 }

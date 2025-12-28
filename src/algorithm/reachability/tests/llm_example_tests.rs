@@ -13,17 +13,18 @@ use crate::algorithm::test_utils::llm_example_network::sets::{
 };
 use crate::algorithm::test_utils::llm_example_network::states::*;
 use crate::algorithm::test_utils::{init_logger, mk_state, mk_states};
-use crate::algorithm_trait::ComputationStep;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::Cancellable;
+use computation_process::{Algorithm, ComputationStep};
+
 // ========== Parametrized test helpers ==========
 
 /// Generic helper function for forward reachability tests.
 /// This allows us to test both BFS and saturation variants with the same logic.
 fn test_reach_forward_from_empty_set_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -40,7 +41,7 @@ where
 
 fn test_reach_forward_from_fixed_point_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -58,7 +59,7 @@ where
 
 fn test_reach_forward_from_attractor_2_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -77,7 +78,7 @@ where
 
 fn test_reach_forward_from_strong_basin_of_attractor_1_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -97,7 +98,7 @@ where
 
 fn test_reach_forward_from_strong_basin_of_attractor_2_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -117,7 +118,7 @@ where
 
 fn test_reach_forward_from_weak_basin_reaches_both_attractors_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -143,7 +144,7 @@ where
 
 fn test_reach_forward_from_weak_basin_100_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -171,7 +172,7 @@ where
 
 fn test_reach_forward_includes_initial_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -192,7 +193,7 @@ where
 /// Generic helper function for backward reachability tests.
 fn test_reach_backward_from_empty_set_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -209,7 +210,7 @@ where
 
 fn test_reach_backward_to_fixed_point_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -228,7 +229,7 @@ where
 
 fn test_reach_backward_to_attractor_2_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -247,7 +248,7 @@ where
 
 fn test_reach_backward_from_single_state_in_cycle_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -268,7 +269,7 @@ where
 
 fn test_reach_backward_includes_initial_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -289,8 +290,8 @@ where
 /// Generic helper for SCC tests that need both forward and backward algorithms.
 fn test_scc_via_forward_backward_intersection_impl<F, B>() -> Cancellable<()>
 where
-    F: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
-    B: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    F: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
+    B: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -324,7 +325,7 @@ where
 
 fn test_basin_separation_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
@@ -384,7 +385,7 @@ where
 
 fn test_forward_reach_from_sources_covers_everything_impl<STEP>() -> Cancellable<()>
 where
-    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices>,
+    STEP: ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
 {
     init_logger();
     let graph = create_test_network();
