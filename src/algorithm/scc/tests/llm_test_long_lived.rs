@@ -7,10 +7,13 @@
 //! A short-lived SCC has some variable where ALL states can transition outside the SCC
 //! by updating that variable.
 
+use crate::algorithm::scc::retain_long_lived;
 use crate::algorithm::scc::tests::sccs_to_sorted_sets;
 use crate::algorithm::scc::{FwdBwdScc, SccConfig};
 use crate::algorithm::test_utils::init_logger;
 use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
+use crate::algorithm::test_utils::mk_states;
+use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 use std::collections::HashSet;
 
@@ -113,5 +116,97 @@ fn test_with_long_lived_filter_reports_only_long_lived_scc() {
         found_sets[0], expected_long_lived,
         "Expected long-lived SCC {{000, 100}}, found: {:?}",
         found_sets[0]
+    );
+}
+
+/// Create a parameterized 2-variable network that tests the multicolor logic in `retain_long_lived`.
+///
+/// The network has one parameter `p` that switches between two behaviors:
+/// - When p=false (Network 1, SHORT-LIVED): A' = !A, B' = B
+/// - When p=true (Network 2, LONG-LIVED): A' = A ^ B, B' = A ^ B
+///
+/// For the test set S = {00, 11}:
+/// - Network 1 (p=false): ALL states can escape via A → short-lived; should be filtered
+/// - Network 2 (p=true): State 00 cannot escape via any variable → long-lived; should be kept
+fn create_parameterized_long_lived_network() -> SymbolicAsyncGraph {
+    // AEON model with parameter p:
+    // When p=false: A' = !A, B' = B (Network 1 - short-lived)
+    // When p=true: A' = A^B, B' = A^B (Network 2 - long-lived)
+    //
+    // We use observable edges (-?) to avoid monotonicity constraints.
+    let aeon_model = r#"
+        A -? A
+        B -? A
+        A -? B
+        B -? B
+        $A: (p & (A ^ B)) | (!p & !A)
+        $B: (p & (A ^ B)) | (!p & B)
+    "#;
+
+    let bn = BooleanNetwork::try_from(aeon_model).expect("Failed to parse AEON model");
+    SymbolicAsyncGraph::new(&bn).expect("Failed to create graph")
+}
+
+/// Test that `retain_long_lived` correctly filters colors using intersection logic.
+///
+/// This test directly calls `retain_long_lived` with a multicolor set and verifies
+/// that only the long-lived color is retained.
+///
+/// - Start: safe_colors = {p=true, p=false}
+/// - After checking A: safe_colors = {p=true} (Network 1 has all states escaping via A)
+/// - After checking B: safe_colors = {p=true} ∩ {p=true, p=false} = {p=true} (CORRECT!)
+#[test]
+fn test_retain_long_lived_multi_color_uses_intersection() {
+    init_logger();
+    let graph = create_parameterized_long_lived_network();
+
+    // Verify we have 2 colors (p=true and p=false)
+    let all_colors = graph.mk_unit_colored_vertices().colors();
+    assert_eq!(
+        all_colors.exact_cardinality(),
+        2u32.into(),
+        "Expected 2 colors (p=true and p=false)"
+    );
+
+    // Create the test set S = {00, 11} with all colors
+    // State encoding: A is variable 0 (MSB), B is variable 1 (LSB)
+    // 00 = state 0b00 = 0
+    // 11 = state 0b11 = 3
+    let test_set = mk_states(&graph, &[0b00, 0b11]);
+
+    // Verify the test set has 2 states × 2 colors = 4 state-color pairs
+    assert_eq!(
+        test_set.exact_cardinality(),
+        4u32.into(),
+        "Expected 4 state-color pairs (2 states × 2 colors)"
+    );
+
+    // Call retain_long_lived
+    let result = retain_long_lived(&graph, &test_set);
+
+    // The result should only contain color p=true (the long-lived network),
+    // which means 2 states × 1 color = 2 state-color pairs
+    assert_eq!(
+        result.exact_cardinality(),
+        2u32.into(),
+        "Expected 2 state-color pairs (2 states × 1 color). \
+         If 4 pairs remain, the bug is that union was used instead of intersection."
+    );
+
+    // Verify the result contains only 1 color
+    let result_colors = result.colors();
+    assert_eq!(
+        result_colors.exact_cardinality(),
+        1u32.into(),
+        "Expected exactly 1 color to be retained (p=true). \
+         If 2 colors remain, the bug is that union was used instead of intersection."
+    );
+
+    // Verify the remaining states are still {00, 11}
+    let remaining_vertices = result.vertices();
+    let expected_vertices = test_set.vertices();
+    assert_eq!(
+        remaining_vertices, expected_vertices,
+        "The retained states should still be {{00, 11}}"
     );
 }

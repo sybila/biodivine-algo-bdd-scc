@@ -115,14 +115,16 @@ fn retain_long_lived(
         }
         set.clone()
     } else {
-        // For colored sets, this is a bit more complicated
-        let mut safe_colors = graph.mk_empty_colors();
+        // For colored sets, this is a bit more complicated.
+        // A color is safe (long-lived) if for EVERY variable, at least one state stays inside.
+        // We start with all colors and intersect with colors that have states staying for each var.
+        let mut safe_colors = colors.clone();
         for var in graph.variables() {
             let can_post_out = graph.var_can_post_out(var, set);
             let stays_inside = set.minus(&can_post_out);
-            safe_colors = safe_colors.union(&stays_inside.colors());
-            if safe_colors == colors {
-                return set.clone();
+            safe_colors = safe_colors.intersect(&stays_inside.colors());
+            if safe_colors.is_empty() {
+                return graph.mk_empty_colored_vertices();
             }
         }
         set.intersect_colors(&safe_colors)
