@@ -3,6 +3,8 @@ use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 
 #[cfg(test)]
+mod llm_test_long_lived;
+#[cfg(test)]
 mod llm_test_model_comparison;
 #[cfg(test)]
 mod llm_tests;

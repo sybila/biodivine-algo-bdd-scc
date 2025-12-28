@@ -8,6 +8,10 @@ pub struct SccConfig {
     pub graph: SymbolicAsyncGraph,
     /// Indicate that the algorithm should try to trim trivial components (default: both).
     pub should_trim: TrimSetting,
+    /// Indicate that only long-lived components should be reported.
+    ///
+    /// A component is long-lived if it cannot be escaped by updating a single variable.
+    pub filter_long_lived: bool,
 }
 
 impl From<SymbolicAsyncGraph> for SccConfig {
@@ -29,12 +33,19 @@ impl SccConfig {
         SccConfig {
             graph,
             should_trim: TrimSetting::Both,
+            filter_long_lived: false,
         }
     }
 
     /// Set trimming of trivial components (none/sinks/sources/both; default: both).
     pub fn should_trim(mut self, should_trim: TrimSetting) -> Self {
         self.should_trim = should_trim;
+        self
+    }
+
+    /// Enable/disable long lived filtering (default: false).
+    pub fn filter_long_lived(mut self, filter: bool) -> Self {
+        self.filter_long_lived = filter;
         self
     }
 }
