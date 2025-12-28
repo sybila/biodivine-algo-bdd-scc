@@ -4,7 +4,7 @@ use crate::algorithm::scc::{SccConfig, filter_scc};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::Incomplete::Suspended;
-use computation_process::{Completable, Computable, DynComputable, GeneratorStep};
+use computation_process::{Completable, DynComputable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
