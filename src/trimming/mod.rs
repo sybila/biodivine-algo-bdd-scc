@@ -47,9 +47,10 @@ pub type TrimSinksAndSources =
     ReachabilityComputation<IterativeSubtraction<RelativeSinksAndSources>>;
 
 /// Configuration for trimming behavior during SCC computation.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub enum TrimSetting {
     /// Trim both sinks and sources (default).
+    #[default]
     Both,
     /// Only trim source states (no predecessors).
     Sources,

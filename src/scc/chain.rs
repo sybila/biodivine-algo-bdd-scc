@@ -134,12 +134,12 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                     // the remaining set.
                     let mut hint = context.graph.mk_empty_colored_vertices();
                     for var in context.graph.variables().rev() {
-                        let var_pre = context
+                        let var_post = context
                             .graph
                             .var_post_out(var, &raw_scc)
                             .intersect(&remaining_rest);
-                        if !var_pre.is_empty() {
-                            hint = var_pre;
+                        if !var_post.is_empty() {
+                            hint = var_post;
                             break;
                         }
                     }
