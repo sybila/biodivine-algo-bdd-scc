@@ -26,7 +26,7 @@
 //!
 //! // Enumerate all non-trivial SCCs
 //! let config = SccConfig::new(graph.clone());
-//! for scc in FwdBwdScc::configure(config, graph.mk_unit_colored_vertices()) {
+//! for scc in FwdBwdScc::configure(config, &graph) {
 //!     let scc = scc.unwrap();
 //!     println!("Found SCC with {} states", scc.exact_cardinality());
 //! }
@@ -77,7 +77,7 @@ fn log_set(set: &GraphColoredVertices) -> String {
 /// Extract the "simple name" of a type argument at compile time.
 ///
 /// In the future, this should be a `const fn`, but `type_name` and `unwrap_or` are not
-/// yet stabilized as `const` functions (even thought they probably are).
+/// yet stabilized as `const` functions (even though they probably are).
 fn simple_type_name<T>() -> &'static str {
     std::any::type_name::<T>().split("::").last().unwrap_or("?")
 }

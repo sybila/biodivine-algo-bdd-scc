@@ -10,6 +10,7 @@ keywords = ["bdd", "boolean-network", "scc", "symbolic", "reachability"]
 categories = ["algorithms", "science"]
 license = "MIT"
 rust-version = "1.88"
+include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE"]
 
 [features]
 build-binary = ["clap", "env_logger"]
