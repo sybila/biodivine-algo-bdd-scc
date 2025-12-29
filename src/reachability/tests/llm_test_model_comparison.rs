@@ -4,7 +4,7 @@
 //! These tests verify that saturation-based and BFS-based algorithms produce
 //! the same results, while also testing with timeouts to ensure tests don't hang.
 
-use crate::algorithm::reachability::{
+use crate::reachability::{
     BfsPredecessors, BfsSuccessors, IterativeUnion, ReachabilityComputation, ReachabilityConfig,
     SaturationPredecessors, SaturationSuccessors,
 };

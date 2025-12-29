@@ -1,5 +1,5 @@
-use crate::algorithm::scc::retain_long_lived;
-use crate::algorithm::trimming::TrimSetting;
+use crate::scc::retain_long_lived;
+use crate::trimming::TrimSetting;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 

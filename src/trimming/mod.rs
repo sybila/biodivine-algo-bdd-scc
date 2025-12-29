@@ -4,8 +4,8 @@ mod step_operators;
 #[cfg(test)]
 mod tests;
 
-use crate::algorithm::reachability::ReachabilityComputation;
-use crate::algorithm::trimming::step_operators::RelativeSinksAndSources;
+use crate::reachability::ReachabilityComputation;
+use crate::trimming::step_operators::RelativeSinksAndSources;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::{Computable, ComputableIdentity, DynComputable, Stateful};
 pub use iterative_subtraction::IterativeSubtraction;

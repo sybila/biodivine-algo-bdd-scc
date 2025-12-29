@@ -6,13 +6,13 @@
 //! from the initial set. A source state has no predecessors within the remaining states
 //! (complement), and a sink state has no successors within the remaining states.
 
-use crate::algorithm::test_utils::llm_example_network::create_test_network;
-use crate::algorithm::test_utils::llm_example_network::sets::{
+use crate::test_utils::llm_example_network::create_test_network;
+use crate::test_utils::llm_example_network::sets::{
     ALL_STATES, ATTRACTOR_1, ATTRACTOR_2, SOURCE_STATES, STRONG_BASIN_ATTR1, WEAK_BASIN,
 };
-use crate::algorithm::test_utils::llm_example_network::states::*;
-use crate::algorithm::test_utils::{mk_state, mk_states};
-use crate::algorithm::trimming::{TrimSinks, TrimSources};
+use crate::test_utils::llm_example_network::states::*;
+use crate::test_utils::{mk_state, mk_states};
+use crate::trimming::{TrimSinks, TrimSources};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use cancel_this::Cancellable;
 use computation_process::Algorithm;

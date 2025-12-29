@@ -171,7 +171,7 @@ pub mod sets {
 mod tests {
     use super::states::*;
     use super::*;
-    use crate::algorithm::test_utils::{mk_state, mk_states};
+    use crate::test_utils::{mk_state, mk_states};
 
     /// Verify that the test network has exactly 8 states (no parameters).
     #[test]

@@ -6,14 +6,12 @@
 //! The tests are generic and can be used to test any algorithm that implements
 //! the `SccAlgorithm` trait.
 
-use crate::algorithm::scc::tests::sccs_to_sorted_sets;
-use crate::algorithm::scc::{
-    ChainScc, ChainState, FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm,
-};
-use crate::algorithm::test_utils::llm_example_network::create_test_network;
-use crate::algorithm::test_utils::llm_example_network::sets::ATTRACTOR_2;
-use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
-use crate::algorithm::test_utils::{init_logger, mk_states};
+use crate::scc::tests::sccs_to_sorted_sets;
+use crate::scc::{ChainScc, ChainState, FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm};
+use crate::test_utils::llm_example_network::create_test_network;
+use crate::test_utils::llm_example_network::sets::ATTRACTOR_2;
+use crate::test_utils::llm_transition_builder::from_transitions;
+use crate::test_utils::{init_logger, mk_states};
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use std::collections::HashSet;
 

@@ -3,8 +3,8 @@
 //! These tests verify that both algorithms produce the same results,
 //! while also testing with timeouts to ensure tests don't hang.
 
-use crate::algorithm::scc::tests::sccs_to_sorted_sets;
-use crate::algorithm::scc::{ChainScc, FwdBwdScc};
+use crate::scc::tests::sccs_to_sorted_sets;
+use crate::scc::{ChainScc, FwdBwdScc};
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;

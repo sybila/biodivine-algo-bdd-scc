@@ -1,6 +1,6 @@
-use crate::algorithm::log_set;
-use crate::algorithm::reachability::ReachabilityAlgorithm;
-use crate::algorithm::scc::{SccConfig, filter_scc};
+use crate::log_set;
+use crate::reachability::ReachabilityAlgorithm;
+use crate::scc::{SccConfig, filter_scc};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::Incomplete::Suspended;

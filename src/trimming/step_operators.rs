@@ -1,5 +1,5 @@
-use crate::algorithm::log_set;
-use crate::algorithm::reachability::{ReachabilityConfig, ReachabilityStep};
+use crate::log_set;
+use crate::reachability::{ReachabilityConfig, ReachabilityStep};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::{Cancellable, is_cancelled};

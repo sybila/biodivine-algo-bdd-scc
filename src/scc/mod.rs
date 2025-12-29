@@ -5,7 +5,7 @@ mod scc_config;
 #[cfg(test)]
 mod tests;
 
-use crate::algorithm::reachability::{
+use crate::reachability::{
     BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
 };
 use biodivine_lib_param_bn::biodivine_std::traits::Set;

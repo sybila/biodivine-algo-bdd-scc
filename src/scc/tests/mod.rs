@@ -1,4 +1,4 @@
-use crate::algorithm::test_utils::mk_state;
+use crate::test_utils::mk_state;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 

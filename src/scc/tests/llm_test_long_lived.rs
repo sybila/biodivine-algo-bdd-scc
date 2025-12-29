@@ -7,12 +7,12 @@
 //! A short-lived SCC has some variable where ALL states can transition outside the SCC
 //! by updating that variable.
 
-use crate::algorithm::scc::retain_long_lived;
-use crate::algorithm::scc::tests::sccs_to_sorted_sets;
-use crate::algorithm::scc::{FwdBwdScc, SccConfig};
-use crate::algorithm::test_utils::init_logger;
-use crate::algorithm::test_utils::llm_transition_builder::from_transitions;
-use crate::algorithm::test_utils::mk_states;
+use crate::scc::retain_long_lived;
+use crate::scc::tests::sccs_to_sorted_sets;
+use crate::scc::{FwdBwdScc, SccConfig};
+use crate::test_utils::init_logger;
+use crate::test_utils::llm_transition_builder::from_transitions;
+use crate::test_utils::mk_states;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 use computation_process::Stateful;

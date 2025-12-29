@@ -2,17 +2,17 @@
 //!
 //! See `llm_example_network.rs` for the complete documentation of the test network structure.
 
-use crate::algorithm::reachability::{
+use crate::reachability::{
     BfsPredecessors, BfsSuccessors, IterativeUnion, ReachabilityComputation, ReachabilityConfig,
     SaturationPredecessors, SaturationSuccessors,
 };
-use crate::algorithm::test_utils::llm_example_network::create_test_network;
-use crate::algorithm::test_utils::llm_example_network::sets::{
+use crate::test_utils::llm_example_network::create_test_network;
+use crate::test_utils::llm_example_network::sets::{
     ALL_STATES, ATTRACTOR_1, ATTRACTOR_2, CAN_REACH_ATTR1, CAN_REACH_ATTR2, SOURCE_STATES,
     STRONG_BASIN_ATTR1, STRONG_BASIN_ATTR2, WEAK_BASIN,
 };
-use crate::algorithm::test_utils::llm_example_network::states::*;
-use crate::algorithm::test_utils::{init_logger, mk_state, mk_states};
+use crate::test_utils::llm_example_network::states::*;
+use crate::test_utils::{init_logger, mk_state, mk_states};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 use cancel_this::Cancellable;
