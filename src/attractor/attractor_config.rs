@@ -1,12 +1,13 @@
 use crate::reachability::ReachabilityConfig;
 use biodivine_lib_param_bn::VariableId;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use std::borrow::Borrow;
 use std::collections::BTreeSet;
 
 /// A configuration object for various attractor detection algorithms.
 #[derive(Clone)]
 pub struct AttractorConfig {
-    /// The graph used for SCC computation.
+    /// The graph used for attractor computation.
     pub graph: SymbolicAsyncGraph,
     /// If it is known that only a subset of variables can update (e.g., when exploring
     /// a trap space), this can be indicated by restricting the considered variables.
@@ -58,8 +59,13 @@ impl AttractorConfig {
     /// # Panics
     ///
     /// The method will panic if you submit a variable ID that is not valid in the current graph.
-    pub fn restrict_variables(mut self, variables: &[VariableId]) -> Self {
-        let variables = BTreeSet::from_iter(variables.iter().copied());
+    pub fn restrict_variables<I>(mut self, variables: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Borrow<VariableId>,
+    {
+        let variables: BTreeSet<VariableId> =
+            BTreeSet::from_iter(variables.into_iter().map(|v| *v.borrow()));
 
         // Check that all variables are valid in this graph. Using the maximal variable
         // is enough because valid variables are always a continuous range.

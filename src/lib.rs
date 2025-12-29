@@ -9,6 +9,7 @@
 //! - [`reachability`]: Forward and backward reachability algorithms (BFS and saturation)
 //! - [`scc`]: SCC detection algorithms (forward-backward and chain-based)
 //! - [`trimming`]: Algorithms for removing trivial sink/source states
+//! - [`attractor`]: Attractor (bottom SCC) enumeration algorithms
 //!
 //! # Quick Start
 //!

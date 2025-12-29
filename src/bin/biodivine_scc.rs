@@ -9,7 +9,7 @@ use env_logger::Builder;
 use log::LevelFilter;
 
 #[derive(Parser)]
-#[command(name = "scc")]
+#[command(name = "biodivine_scc")]
 #[command(about = "Enumerate strongly connected components in a Boolean network")]
 struct Args {
     /// Path to a Boolean network file (.aeon, .bnet, etc.)
@@ -59,7 +59,7 @@ enum LogLevel {
 }
 
 #[derive(Clone, clap::ValueEnum)]
-pub enum TrimConfig {
+enum TrimConfig {
     Both,
     Sources,
     Sinks,

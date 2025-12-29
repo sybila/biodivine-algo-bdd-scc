@@ -21,6 +21,8 @@ Boolean network modeling and symbolic graph operations.
 
 - **Symbolic SCC detection**: Find all non-trivial strongly connected components
   using forward-backward or chain-based algorithms
+- **Symbolic attractor detection**: Find all attractors using Xie-Beerel symbolic
+  algorithm with interleaved transition guided reduction.
 - **Reachability analysis**: Compute forward and backward reachable sets using
   BFS or saturation-based strategies  
 - **Trimming**: Remove trivial sink/source states before SCC computation
@@ -110,9 +112,14 @@ fn example() {
 | `TrimSources`         | Remove states with no predecessors |
 | `TrimSinksAndSources` | Remove both sinks and sources      |
 
+### Attractors
+
+The crate also provides symbolic **attractor enumeration** algorithms in the [`attractor`]
+module, plus a small CLI (`biodivine_attractor`) behind the `build-binary` feature.
+
 ## Command-Line Tool
 
-The crate includes a binary for SCC enumeration. Build it with:
+The crate includes binaries for SCC and attractor enumeration. Build them with:
 
 ```bash
 cargo build --release --features build-binary
@@ -132,6 +139,12 @@ Usage:
 
 # Enumerate only the first 5 SCCs
 ./target/release/biodivine_scc model.aeon --count=5
+
+# Enumerate attractors using ITGR + Xie-Beerel (default)
+./target/release/biodivine_attractor model.aeon
+
+# Enumerate attractors using only Xie-Beerel
+./target/release/biodivine_attractor model.aeon --algorithm=xie-beerel
 ```
 
 ## Testing
@@ -155,6 +168,13 @@ The general idea of SCC decomposition for colored graphs (i.e., with logical par
 > International Conference on Tools and Algorithms for the Construction and Analysis of Systems, pp. 64-83. 
 > Cham: Springer International Publishing, 2021.
 > [DOI](https://doi.org/10.1007/978-3-030-72013-1_4)
+
+Furthermore, the attractor detection algorithms are adapter from this paper:
+
+> Beneš, Nikola, Luboš Brim, Samuel Pastva, and David Šafránek. "Computing bottom SCCs symbolically using 
+> transition guided reduction." In International Conference on Computer Aided Verification, pp. 505-528. 
+> Cham: Springer International Publishing, 2021.
+> [DOI](https://doi.org/10.1007/978-3-030-81685-8_24)
 
 The chain algorithm is also loosely based on:
 

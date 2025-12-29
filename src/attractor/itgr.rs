@@ -9,6 +9,7 @@ use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, Symboli
 use computation_process::Incomplete::Suspended;
 use computation_process::{Completable, ComputationStep};
 use log::{debug, info};
+use std::cmp::Reverse;
 
 pub struct ItgrState {
     /// Current set of remaining states (the result of the computation).
@@ -101,6 +102,11 @@ impl ItgrState {
         }
     }
 
+    /// Returns an iterator over variables that are still considered "active" (i.e., not eliminated)
+    /// in the current state of reduction.
+    ///
+    /// The result of this method is typically used to restrict the variable set for subsequent
+    /// algorithms (like [`XieBeerelAttractors`](crate::attractor::XieBeerelAttractors)).
     pub fn active_variables(&self) -> impl Iterator<Item = VariableId> {
         self.remaining_reachability.variables.iter().copied()
     }
@@ -161,7 +167,7 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
             // Sort reductions by symbolic size (should be a fairly inexpensive operation).
             state
                 .reductions
-                .sort_by_cached_key(|(_, it)| usize::MAX - it.weight());
+                .sort_by_cached_key(|(_, it)| Reverse(it.weight()));
         }
 
         // Second, try to advance the last reduction:

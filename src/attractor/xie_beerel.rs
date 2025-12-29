@@ -18,8 +18,8 @@ pub struct XieBeerelState {
 
 /// Step implementation for the Xie-Beerel attractor algorithm.
 ///
-/// This type is parameterized by forward and backward reachability algorithms
-/// and implements the [`GeneratorStep`] trait for SCC enumeration.
+/// This type uses forward and backward reachability algorithms
+/// and implements the [`GeneratorStep`] trait for attractor enumeration.
 pub struct XieBeerelStep;
 
 enum Step {

@@ -23,8 +23,9 @@ fn is_attractor_scc(graph: &SymbolicAsyncGraph, scc: &GraphColoredVertices) -> b
     // Check if any variable can take states outside the SCC
     for var in graph.variables() {
         let can_post_out = graph.var_post_out(var, scc);
-        // If any state can leave the SCC, it's not an attractor
-        if !can_post_out.is_subset(scc) {
+        // `var_post_out` returns successors outside `scc` (and excludes successors already in `scc`).
+        // Hence, `scc` is an attractor iff this set is empty for every variable.
+        if !can_post_out.is_empty() {
             return false;
         }
     }
@@ -121,10 +122,9 @@ fn run_xie_beerel(
         let mut itgr = InterleavedTransitionGuidedReduction::configure(config.clone(), itgr_state);
         let reduced = itgr.compute()?;
 
-        let active_variables = itgr.state().active_variables().collect::<Vec<_>>();
         let config = config
             .restrict_state_space(&reduced)
-            .restrict_variables(&active_variables);
+            .restrict_variables(itgr.state().active_variables());
         let initial_state = XieBeerelState::from(&reduced);
         (config, initial_state)
     } else {
