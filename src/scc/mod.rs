@@ -1,3 +1,47 @@
+//! Symbolic SCC detection algorithms for Boolean networks.
+//!
+//! This module provides algorithms for detecting strongly connected components (SCCs)
+//! in the asynchronous state transition graph of a Boolean network.
+//!
+//! # Algorithms
+//!
+//! - [`FwdBwdScc`]: Classic forward-backward algorithm. Picks a pivot, computes forward
+//!   and backward reachable sets, and extracts their intersection as an SCC.
+//! - [`ChainScc`]: Chain-based algorithm that uses backward reachability to find basins
+//!   and then forward reachability within each basin to find SCCs. Can sometimes handle
+//!   larger networks.
+//!
+//! Both algorithms only report **non-trivial SCCs** (containing more than one state).
+//!
+//! # Configuration
+//!
+//! Use [`SccConfig`] to customize algorithm behavior:
+//!
+//! - **Trimming**: Remove trivial sink/source states before SCC computation
+//! - **Long-lived filtering**: Only report SCCs that cannot be escaped by updating
+//!   a single variable
+//!
+//! # Example
+//!
+//! ```no_run
+//! use biodivine_algo_bdd_scc::scc::{FwdBwdScc, SccConfig};
+//! use biodivine_lib_param_bn::BooleanNetwork;
+//! use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
+//! use computation_process::Stateful;
+//!
+//! let bn = BooleanNetwork::try_from_file("model.aeon").unwrap();
+//! let graph = SymbolicAsyncGraph::new(&bn).unwrap();
+//!
+//! // Configure with trimming and long-lived filtering
+//! let config = SccConfig::new(graph.clone())
+//!     .filter_long_lived(true);
+//!
+//! for scc in FwdBwdScc::configure(config, &graph) {
+//!     let scc = scc.unwrap();
+//!     println!("Found SCC with {} states", scc.exact_cardinality());
+//! }
+//! ```
+
 mod chain;
 mod fwd_bwd;
 mod scc_config;
@@ -27,7 +71,7 @@ impl<STATE, T: GenAlgorithm<SccConfig, STATE, GraphColoredVertices> + 'static> S
 {
 }
 
-/// A very basic algorithm for finding strongly connected components.
+/// A very basic forward-backward algorithm for finding strongly connected components.
 ///
 /// Basic algorithm idea:
 ///  - Pick a pivot vertex.
@@ -42,8 +86,8 @@ pub type FwdBwdScc = Generator<
     FwdBwdStep<ForwardReachability, BackwardReachability>,
 >;
 
-/// Variant of [`FwdBwdScc`] that uses BFS reachability. This is not really necessary and is
-/// mostly just for benchmark comparisons.
+/// Variant of [`FwdBwdScc`] that uses BFS reachability. This is not very practical (the rigid
+/// BFS order is not required for `fwd-bwd` to work) and is mostly just intended for benchmarking.
 pub type FwdBwdSccBfs = Generator<
     SccConfig,
     FwdBwdState,
@@ -51,9 +95,16 @@ pub type FwdBwdSccBfs = Generator<
     FwdBwdStep<ForwardReachabilityBfs, BackwardReachabilityBfs>,
 >;
 
-/// An SCC detection algorithm that uses "chain-like" exploration. It can sometimes work on
-/// larger networks where fwd-bwd fails. But in cases where `fwd-bwd`` works, `fwd-bwd` is
-/// often faster because it is quicker to partition the state space into smaller chunks.
+/// An SCC detection algorithm that uses "chain-like" exploration. It is generally faster
+/// than the `fwd-bwd` algorithm, but not exclusively so. Generally, we recommend
+/// `chain` as the default SCC detection algorithm, but for hard instances it may be useful
+/// to test both approaches.
+///
+/// > Note that this algorithm is slightly different from the one presented in
+/// > [A Truly Symbolic Linear-Time Algorithm for SCC Decomposition](https://link.springer.com/chapter/10.1007/978-3-031-30820-8_22).
+/// > Mainly, it does not select the pivot vertex from the "last level" of the reachability
+/// > procedure. The main reason is that this requires BFS reachability, which is in practice
+/// > much slower than saturation.
 ///
 /// Basic algorithm idea:
 ///  - Pick a pivot vertex (using a hint set if available).

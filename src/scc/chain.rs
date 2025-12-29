@@ -8,6 +8,9 @@ use computation_process::{Completable, DynComputable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
+/// Internal state for the chain-based SCC algorithm.
+///
+/// This struct tracks the current computation phase and pending work items.
 pub struct ChainState {
     computing: Step,
     to_process: Vec<Step0>,
@@ -25,6 +28,10 @@ impl From<&SymbolicAsyncGraph> for ChainState {
     }
 }
 
+/// Step implementation for the chain-based SCC algorithm.
+///
+/// This type is parameterized by forward and backward reachability algorithms
+/// and implements the [`GeneratorStep`] trait for SCC enumeration.
 pub struct ChainStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
     _phantom: PhantomData<(FWD, BWD)>,
 }

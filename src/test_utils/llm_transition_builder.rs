@@ -15,9 +15,9 @@
 //!
 //! # Example
 //!
-//! ```rust
-//! use biodivine_lib_param_bn::BooleanNetwork;
-//! use biodivine_lib_algo_scc::algorithm::test_utils::llm_transition_builder::from_transitions;
+//! ```ignore
+//! // This module is only available during testing.
+//! use crate::test_utils::llm_transition_builder::from_transitions;
 //!
 //! // Define transitions for a 2-variable network:
 //! // 00 → 10 (variable 0 flips to 1)
@@ -229,7 +229,7 @@ fn find_variables_in_dnf(function_true_states: &HashSet<u32>, num_vars: usize) -
 /// * `num_vars` - The number of variables in the network
 /// * `transitions` - A list of `(from_state, to_state)` pairs. States are represented
 ///   as integers where the binary encoding corresponds to variable values
-///   (most significant bit = variable 0).
+///   (the most significant bit = variable 0).
 ///
 /// # Returns
 ///
@@ -244,13 +244,13 @@ fn find_variables_in_dnf(function_true_states: &HashSet<u32>, num_vars: usize) -
 /// 2. Set `f_i(s) = s'[i]` (the new value of variable `i` in state `s'`)
 /// 3. For states with no outgoing transitions, `f_i(s) = s[i]` (fixed point)
 /// 4. Convert each function `f_i` to DNF by collecting all states where `f_i(s) = 1`
-/// 5. Generate AEON format string and parse it into a `BooleanNetwork`
+/// 5. Generate an AEON format string and parse it into a `BooleanNetwork`
 ///
 /// # Example
 ///
-/// ```rust
-/// use biodivine_lib_param_bn::BooleanNetwork;
-/// use biodivine_lib_algo_scc::algorithm::test_utils::llm_transition_builder::from_transitions;
+/// ```ignore
+/// // This module is only available during testing.
+/// use crate::test_utils::llm_transition_builder::from_transitions;
 ///
 /// // Create a simple 2-variable cycle: 00 → 10 → 11 → 01 → 00
 /// let transitions = vec![

@@ -8,11 +8,18 @@ use computation_process::{Completable, DynComputable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
+/// Internal state for the forward-backward SCC algorithm.
+///
+/// This struct tracks the current computation phase and pending work items.
 pub struct FwdBwdState {
     computing: Step,
     to_process: Vec<GraphColoredVertices>,
 }
 
+/// Step implementation for the forward-backward SCC algorithm.
+///
+/// This type is parameterized by forward and backward reachability algorithms
+/// and implements the [`GeneratorStep`] trait for SCC enumeration.
 pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
     _phantom: PhantomData<(FWD, BWD)>,
 }

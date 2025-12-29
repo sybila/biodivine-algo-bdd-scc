@@ -3,7 +3,7 @@ use crate::trimming::TrimSetting;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 
-/// A configuration object for various reachability problems.
+/// A configuration object for various SCC detections problems.
 #[derive(Clone)]
 pub struct SccConfig {
     /// The graph used for SCC computation.

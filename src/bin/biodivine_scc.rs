@@ -12,29 +12,27 @@ use log::LevelFilter;
 #[command(name = "scc")]
 #[command(about = "Enumerate strongly connected components in a Boolean network")]
 struct Args {
-    /// Path to BN file
+    /// Path to a Boolean network file (.aeon, .bnet, etc.)
     #[arg(value_name = "FILE")]
     file: String,
 
-    /// Algorithm to use: "fwd-bwd" or "fwd-bwd-bfs"
+    /// SCC detection algorithm
     #[arg(long, default_value = "fwd-bwd", require_equals = true)]
     algorithm: Algorithm,
 
-    /// Trimming strategy: "sinks", "sources", or "both"
+    /// Pre-processing trimming strategy
     #[arg(long, default_value = "both", require_equals = true)]
     trim: TrimConfig,
 
-    /// Number of SCCs to enumerate (0 means all)
+    /// Number of SCCs to enumerate (0 = all)
     #[arg(long, default_value_t = 0, require_equals = true)]
     count: usize,
 
-    /// Filter long-lived components only
+    /// Only report SCCs that cannot be escaped by a single variable update
     #[arg(long)]
     long_lived: bool,
 
-    /// Verbose logging level: "trace", "debug", or "info"
-    /// If specified without a value (--verbose or -v), defaults to "info"
-    /// Use --verbose=LEVEL or -v=LEVEL to specify a level, or just --verbose/-v for info
+    /// Logging verbosity (use -v for info, or -v=LEVEL for specific level)
     #[arg(long, short = 'v', value_name = "LEVEL", num_args = 0..=1, default_missing_value = "info", require_equals = true)]
     verbose: Option<Option<LogLevel>>,
 }

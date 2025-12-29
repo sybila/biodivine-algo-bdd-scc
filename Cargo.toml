@@ -2,6 +2,14 @@
 name = "biodivine-algo-bdd-scc"
 version = "0.1.0"
 edition = "2024"
+authors = ["Samuel Pastva <daemontus@gmail.com>", "Lukáš Chudíček"]
+description = "BDD-based algorithms for symbolic SCC detection in Boolean networks"
+repository = "https://github.com/sybila/biodivine-algo-bdd-scc"
+readme = "README.md"
+keywords = ["bdd", "boolean-network", "scc", "symbolic", "reachability"]
+categories = ["algorithms", "science"]
+license = "MIT"
+rust-version = "1.88"
 
 [features]
 build-binary = ["clap", "env_logger"]
