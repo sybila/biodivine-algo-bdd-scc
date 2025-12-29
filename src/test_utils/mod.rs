@@ -62,3 +62,73 @@ pub fn mk_states(graph: &SymbolicAsyncGraph, states: &[u32]) -> GraphColoredVert
     }
     result
 }
+
+/// Collect all state numbers from a GraphColoredVertices set.
+/// Returns a sorted vector of state numbers for comparison.
+///
+/// At the moment, this only supports up to 20 variables.
+///
+/// # Arguments
+///
+/// * `graph` - The symbolic async graph
+/// * `set` - The set of colored vertices to extract state numbers from
+/// * `num_vars` - The number of variables in the graph
+///
+/// # Example
+///
+/// For a 3-variable graph, if `set` contains states `{000, 101, 111}`, this returns `[0, 5, 7]`.
+pub fn collect_state_numbers(
+    graph: &SymbolicAsyncGraph,
+    set: &GraphColoredVertices,
+    num_vars: usize,
+) -> Vec<u32> {
+    assert!(num_vars <= 20);
+    let mut states = Vec::new();
+    let max_state = (1u32 << num_vars) - 1;
+    for state in 0..=max_state {
+        let state_set = mk_state(graph, state);
+        if !state_set.intersect(set).is_empty() {
+            states.push(state);
+        }
+    }
+    states
+}
+
+/// Convert a slice of GraphColoredVertices sets to sorted sets of state numbers.
+/// This is useful for comparing sets from different algorithms, as it normalizes
+/// the representation and sorts them consistently.
+///
+/// # Arguments
+///
+/// * `graph` - The symbolic async graph
+/// * `sets` - A slice of sets represented as GraphColoredVertices
+/// * `num_vars` - The number of variables in the graph
+///
+/// # Returns
+///
+/// A vector of HashSets containing state numbers, sorted by size and then by sorted state numbers.
+pub fn symbolic_sets_to_sorted_sets(
+    graph: &SymbolicAsyncGraph,
+    sets: &[GraphColoredVertices],
+    num_vars: usize,
+) -> Vec<std::collections::HashSet<u32>> {
+    use std::collections::HashSet;
+
+    let mut result: Vec<HashSet<u32>> = sets
+        .iter()
+        .map(|set| {
+            collect_state_numbers(graph, set, num_vars)
+                .into_iter()
+                .collect()
+        })
+        .collect();
+
+    // Sort by size, then by sorted state numbers for consistent ordering
+    result.sort_by_cached_key(|s| {
+        let mut v: Vec<u32> = s.iter().copied().collect();
+        v.sort();
+        (v.len(), v)
+    });
+
+    result
+}

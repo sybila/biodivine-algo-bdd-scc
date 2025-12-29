@@ -8,11 +8,10 @@
 //! by updating that variable.
 
 use crate::scc::retain_long_lived;
-use crate::scc::tests::sccs_to_sorted_sets;
 use crate::scc::{FwdBwdScc, SccConfig};
-use crate::test_utils::init_logger;
 use crate::test_utils::llm_transition_builder::from_transitions;
 use crate::test_utils::mk_states;
+use crate::test_utils::{init_logger, symbolic_sets_to_sorted_sets};
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 use computation_process::Stateful;
@@ -66,7 +65,7 @@ fn test_without_long_lived_filter_reports_both_sccs() {
     );
 
     // Verify the SCCs are the expected ones
-    let found_sets = sccs_to_sorted_sets(&graph, &found_sccs, 3);
+    let found_sets = symbolic_sets_to_sorted_sets(&graph, &found_sccs, 3);
 
     let expected_long_lived: HashSet<u32> = [0b000, 0b100].iter().copied().collect();
     let expected_short_lived: HashSet<u32> = [0b011, 0b111].iter().copied().collect();
@@ -109,7 +108,7 @@ fn test_with_long_lived_filter_reports_only_long_lived_scc() {
     );
 
     // Verify it's the long-lived SCC
-    let found_sets = sccs_to_sorted_sets(&graph, &found_sccs, 3);
+    let found_sets = symbolic_sets_to_sorted_sets(&graph, &found_sccs, 3);
 
     let expected_long_lived: HashSet<u32> = [0b000, 0b100].iter().copied().collect();
 

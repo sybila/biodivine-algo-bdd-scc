@@ -2,7 +2,10 @@
 //!
 //! See `llm_example_network.rs` for the complete documentation of the test network structure.
 
-use crate::attractor::{AttractorConfig, XieBeerelAttractors, XieBeerelState};
+use crate::attractor::{
+    AttractorConfig, InterleavedTransitionGuidedReduction, ItgrState, XieBeerelAttractors,
+    XieBeerelState,
+};
 use crate::test_utils::llm_example_network::create_test_network;
 use crate::test_utils::llm_example_network::sets::{ATTRACTOR_1, ATTRACTOR_2};
 use crate::test_utils::llm_transition_builder::from_transitions;
@@ -10,7 +13,7 @@ use crate::test_utils::{init_logger, mk_states};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
-use computation_process::Stateful;
+use computation_process::{Computable, Stateful};
 
 /// Verify that the attractors found match the expected attractors exactly.
 /// This handles the fact that attractors can be returned in arbitrary order.
@@ -73,20 +76,46 @@ fn verify_attractors(
     }
 }
 
+// ========== Helper functions ==========
+
+/// Run XieBeerel algorithm on a graph (with optional ITGR reduction).
+fn run_xie_beerel(
+    graph: &SymbolicAsyncGraph,
+    use_itgr: bool,
+) -> Cancellable<Vec<GraphColoredVertices>> {
+    let config = AttractorConfig::new(graph.clone());
+    let (config, initial_state) = if use_itgr {
+        // First, run ITGR to reduce the state space
+        let itgr_state = ItgrState::new(graph, &graph.mk_unit_colored_vertices());
+        let mut itgr = InterleavedTransitionGuidedReduction::configure(config.clone(), itgr_state);
+        let reduced = itgr.compute()?;
+
+        let active_variables = itgr.state().active_variables().collect::<Vec<_>>();
+        let config = config
+            .restrict_state_space(&reduced)
+            .restrict_variables(&active_variables);
+        let initial_state = XieBeerelState::from(&reduced);
+        (config, initial_state)
+    } else {
+        let initial_state = XieBeerelState::from(graph);
+        (config, initial_state)
+    };
+
+    let generator = XieBeerelAttractors::configure(config, initial_state);
+    let mut attractors = Vec::new();
+    for result in generator {
+        attractors.push(result?);
+    }
+    Ok(attractors)
+}
+
 // ========== Test implementations ==========
 
 /// Test that we can find both attractors in the example network.
-fn test_find_all_attractors_impl() -> Cancellable<()> {
+fn test_find_all_attractors_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly two attractors: {000} and {110, 111}
     verify_attractors(&graph, attractors, &[ATTRACTOR_1, ATTRACTOR_2]);
@@ -94,17 +123,10 @@ fn test_find_all_attractors_impl() -> Cancellable<()> {
 }
 
 /// Test that we find the fixed point attractor.
-fn test_find_fixed_point_attractor_impl() -> Cancellable<()> {
+fn test_find_fixed_point_attractor_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find the fixed point {000}
     let attractor_1 = mk_states(&graph, ATTRACTOR_1);
@@ -116,17 +138,10 @@ fn test_find_fixed_point_attractor_impl() -> Cancellable<()> {
 }
 
 /// Test that we find the cycle attractor.
-fn test_find_cycle_attractor_impl() -> Cancellable<()> {
+fn test_find_cycle_attractor_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find the cycle {110, 111}
     let attractor_2 = mk_states(&graph, ATTRACTOR_2);
@@ -138,17 +153,10 @@ fn test_find_cycle_attractor_impl() -> Cancellable<()> {
 }
 
 /// Test that attractors are non-empty (except for trivial cases).
-fn test_attractors_are_non_empty_impl() -> Cancellable<()> {
+fn test_attractors_are_non_empty_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // All attractors should be non-empty
     for (i, attr) in attractors.iter().enumerate() {
@@ -158,17 +166,10 @@ fn test_attractors_are_non_empty_impl() -> Cancellable<()> {
 }
 
 /// Test that attractors are disjoint (each state appears in at most one attractor).
-fn test_attractors_are_disjoint_impl() -> Cancellable<()> {
+fn test_attractors_are_disjoint_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Check that attractors are pairwise disjoint
     for i in 0..attractors.len() {
@@ -187,17 +188,10 @@ fn test_attractors_are_disjoint_impl() -> Cancellable<()> {
 }
 
 /// Test that attractors cover all states that can reach them.
-fn test_attractors_cover_reachable_states_impl() -> Cancellable<()> {
+fn test_attractors_cover_reachable_states_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // The union of all attractors should be a subset of all states
     let mut union = graph.mk_empty_colored_vertices();
@@ -218,7 +212,7 @@ fn test_attractors_cover_reachable_states_impl() -> Cancellable<()> {
 
 /// Test a network with a single fixed point attractor.
 /// All states eventually converge to state 00.
-fn test_single_fixed_point_impl() -> Cancellable<()> {
+fn test_single_fixed_point_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 2-variable network where all states converge to 00:
     // 01 → 00 (x1 flips)
@@ -232,14 +226,7 @@ fn test_single_fixed_point_impl() -> Cancellable<()> {
 
     let bn = from_transitions(2, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly one attractor: {00}
     verify_attractors(&graph, attractors, &[&[0b00]]);
@@ -248,7 +235,7 @@ fn test_single_fixed_point_impl() -> Cancellable<()> {
 
 /// Test a network with a single 2-cycle attractor.
 /// States 00 and 10 form a cycle, and state 01 converges to it.
-fn test_single_2_cycle_impl() -> Cancellable<()> {
+fn test_single_2_cycle_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 2-variable network with a 2-cycle: 00 ↔ 10
     // 00 → 10 (x0 flips)
@@ -263,14 +250,7 @@ fn test_single_2_cycle_impl() -> Cancellable<()> {
 
     let bn = from_transitions(2, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly one attractor: {00, 10}
     verify_attractors(&graph, attractors, &[&[0b00, 0b10]]);
@@ -278,7 +258,7 @@ fn test_single_2_cycle_impl() -> Cancellable<()> {
 }
 
 /// Test a network with a single 4-cycle attractor.
-fn test_single_4_cycle_impl() -> Cancellable<()> {
+fn test_single_4_cycle_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 2-variable network with a 4-cycle: 00 → 10 → 11 → 01 → 00
     let transitions = vec![
@@ -290,14 +270,7 @@ fn test_single_4_cycle_impl() -> Cancellable<()> {
 
     let bn = from_transitions(2, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly one attractor: {00, 01, 10, 11}
     verify_attractors(&graph, attractors, &[&[0b00, 0b01, 0b10, 0b11]]);
@@ -305,7 +278,7 @@ fn test_single_4_cycle_impl() -> Cancellable<()> {
 }
 
 /// Test a network with two disjoint attractors: one fixed point and one cycle.
-fn test_two_disjoint_attractors_impl() -> Cancellable<()> {
+fn test_two_disjoint_attractors_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 3-variable network with:
     // - Fixed point: {000}
@@ -326,14 +299,7 @@ fn test_two_disjoint_attractors_impl() -> Cancellable<()> {
 
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly two attractors: {000} and {110, 111}
     verify_attractors(&graph, attractors, &[&[0b000], &[0b110, 0b111]]);
@@ -341,7 +307,7 @@ fn test_two_disjoint_attractors_impl() -> Cancellable<()> {
 }
 
 /// Test a network with two disjoint cycles.
-fn test_two_disjoint_cycles_impl() -> Cancellable<()> {
+fn test_two_disjoint_cycles_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 3-variable network with two disjoint 2-cycles:
     // - Cycle 1: {000, 100}
@@ -363,14 +329,7 @@ fn test_two_disjoint_cycles_impl() -> Cancellable<()> {
 
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly two attractors: {000, 100} and {011, 111}
     verify_attractors(&graph, attractors, &[&[0b000, 0b100], &[0b011, 0b111]]);
@@ -378,7 +337,7 @@ fn test_two_disjoint_cycles_impl() -> Cancellable<()> {
 }
 
 /// Test a network with multiple fixed points.
-fn test_multiple_fixed_points_impl() -> Cancellable<()> {
+fn test_multiple_fixed_points_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 2-variable network with two fixed points:
     // - Fixed point: {00}
@@ -391,14 +350,7 @@ fn test_multiple_fixed_points_impl() -> Cancellable<()> {
 
     let bn = from_transitions(2, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly two attractors: {00} and {11}
     verify_attractors(&graph, attractors, &[&[0b00], &[0b11]]);
@@ -406,7 +358,7 @@ fn test_multiple_fixed_points_impl() -> Cancellable<()> {
 }
 
 /// Test a network with a 4-cycle attractor (using 3 variables).
-fn test_single_4_cycle_3vars_impl() -> Cancellable<()> {
+fn test_single_4_cycle_3vars_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 3-variable network with a 4-cycle: 000 → 100 → 101 → 001 → 000
     let transitions = vec![
@@ -423,14 +375,7 @@ fn test_single_4_cycle_3vars_impl() -> Cancellable<()> {
 
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly one attractor: {000, 001, 100, 101}
     verify_attractors(&graph, attractors, &[&[0b000, 0b001, 0b100, 0b101]]);
@@ -438,7 +383,7 @@ fn test_single_4_cycle_3vars_impl() -> Cancellable<()> {
 }
 
 /// Test a network with a larger cycle and transient states.
-fn test_cycle_with_transient_states_impl() -> Cancellable<()> {
+fn test_cycle_with_transient_states_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     // Create a 3-variable network with:
     // - 2-cycle: {110, 111}
@@ -458,14 +403,7 @@ fn test_cycle_with_transient_states_impl() -> Cancellable<()> {
 
     let bn = from_transitions(3, &transitions).expect("Failed to create network");
     let graph = SymbolicAsyncGraph::new(&bn).expect("Failed to create graph");
-    let config = AttractorConfig::new(graph.clone());
-    let initial_state = XieBeerelState::from(&graph);
-
-    let mut generator = XieBeerelAttractors::configure(config, initial_state);
-    let mut attractors = Vec::new();
-    while let Some(result) = generator.next() {
-        attractors.push(result?);
-    }
+    let attractors = run_xie_beerel(&graph, use_itgr)?;
 
     // Should find exactly one attractor: {110, 111}
     verify_attractors(&graph, attractors, &[&[0b110, 0b111]]);
@@ -476,70 +414,140 @@ fn test_cycle_with_transient_states_impl() -> Cancellable<()> {
 
 #[test]
 fn test_find_all_attractors() -> Cancellable<()> {
-    test_find_all_attractors_impl()
+    test_find_all_attractors_impl(false)
+}
+
+#[test]
+fn test_find_all_attractors_with_itgr() -> Cancellable<()> {
+    test_find_all_attractors_impl(true)
 }
 
 #[test]
 fn test_find_fixed_point_attractor() -> Cancellable<()> {
-    test_find_fixed_point_attractor_impl()
+    test_find_fixed_point_attractor_impl(false)
+}
+
+#[test]
+fn test_find_fixed_point_attractor_with_itgr() -> Cancellable<()> {
+    test_find_fixed_point_attractor_impl(true)
 }
 
 #[test]
 fn test_find_cycle_attractor() -> Cancellable<()> {
-    test_find_cycle_attractor_impl()
+    test_find_cycle_attractor_impl(false)
+}
+
+#[test]
+fn test_find_cycle_attractor_with_itgr() -> Cancellable<()> {
+    test_find_cycle_attractor_impl(true)
 }
 
 #[test]
 fn test_attractors_are_non_empty() -> Cancellable<()> {
-    test_attractors_are_non_empty_impl()
+    test_attractors_are_non_empty_impl(false)
+}
+
+#[test]
+fn test_attractors_are_non_empty_with_itgr() -> Cancellable<()> {
+    test_attractors_are_non_empty_impl(true)
 }
 
 #[test]
 fn test_attractors_are_disjoint() -> Cancellable<()> {
-    test_attractors_are_disjoint_impl()
+    test_attractors_are_disjoint_impl(false)
+}
+
+#[test]
+fn test_attractors_are_disjoint_with_itgr() -> Cancellable<()> {
+    test_attractors_are_disjoint_impl(true)
 }
 
 #[test]
 fn test_attractors_cover_reachable_states() -> Cancellable<()> {
-    test_attractors_cover_reachable_states_impl()
+    test_attractors_cover_reachable_states_impl(false)
+}
+
+#[test]
+fn test_attractors_cover_reachable_states_with_itgr() -> Cancellable<()> {
+    test_attractors_cover_reachable_states_impl(true)
 }
 
 #[test]
 fn test_single_fixed_point() -> Cancellable<()> {
-    test_single_fixed_point_impl()
+    test_single_fixed_point_impl(false)
+}
+
+#[test]
+fn test_single_fixed_point_with_itgr() -> Cancellable<()> {
+    test_single_fixed_point_impl(true)
 }
 
 #[test]
 fn test_single_2_cycle() -> Cancellable<()> {
-    test_single_2_cycle_impl()
+    test_single_2_cycle_impl(false)
+}
+
+#[test]
+fn test_single_2_cycle_with_itgr() -> Cancellable<()> {
+    test_single_2_cycle_impl(true)
 }
 
 #[test]
 fn test_single_4_cycle() -> Cancellable<()> {
-    test_single_4_cycle_impl()
+    test_single_4_cycle_impl(false)
+}
+
+#[test]
+fn test_single_4_cycle_with_itgr() -> Cancellable<()> {
+    test_single_4_cycle_impl(true)
 }
 
 #[test]
 fn test_two_disjoint_attractors() -> Cancellable<()> {
-    test_two_disjoint_attractors_impl()
+    test_two_disjoint_attractors_impl(false)
+}
+
+#[test]
+fn test_two_disjoint_attractors_with_itgr() -> Cancellable<()> {
+    test_two_disjoint_attractors_impl(true)
 }
 
 #[test]
 fn test_two_disjoint_cycles() -> Cancellable<()> {
-    test_two_disjoint_cycles_impl()
+    test_two_disjoint_cycles_impl(false)
+}
+
+#[test]
+fn test_two_disjoint_cycles_with_itgr() -> Cancellable<()> {
+    test_two_disjoint_cycles_impl(true)
 }
 
 #[test]
 fn test_multiple_fixed_points() -> Cancellable<()> {
-    test_multiple_fixed_points_impl()
+    test_multiple_fixed_points_impl(false)
+}
+
+#[test]
+fn test_multiple_fixed_points_with_itgr() -> Cancellable<()> {
+    test_multiple_fixed_points_impl(true)
 }
 
 #[test]
 fn test_single_4_cycle_3vars() -> Cancellable<()> {
-    test_single_4_cycle_3vars_impl()
+    test_single_4_cycle_3vars_impl(false)
+}
+
+#[test]
+fn test_single_4_cycle_3vars_with_itgr() -> Cancellable<()> {
+    test_single_4_cycle_3vars_impl(true)
 }
 
 #[test]
 fn test_cycle_with_transient_states() -> Cancellable<()> {
-    test_cycle_with_transient_states_impl()
+    test_cycle_with_transient_states_impl(false)
+}
+
+#[test]
+fn test_cycle_with_transient_states_with_itgr() -> Cancellable<()> {
+    test_cycle_with_transient_states_impl(true)
 }

@@ -3,8 +3,8 @@
 //! These tests verify that both algorithms produce the same results,
 //! while also testing with timeouts to ensure tests don't hang.
 
-use crate::scc::tests::sccs_to_sorted_sets;
 use crate::scc::{ChainScc, FwdBwdScc};
+use crate::test_utils::symbolic_sets_to_sorted_sets;
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
@@ -21,8 +21,8 @@ fn compare_scc_results(
     num_vars: usize,
     model_path: &str,
 ) {
-    let fwd_bwd_sets = sccs_to_sorted_sets(graph, &fwd_bwd_sccs, num_vars);
-    let chain_sets = sccs_to_sorted_sets(graph, &chain_sccs, num_vars);
+    let fwd_bwd_sets = symbolic_sets_to_sorted_sets(graph, &fwd_bwd_sccs, num_vars);
+    let chain_sets = symbolic_sets_to_sorted_sets(graph, &chain_sccs, num_vars);
 
     assert_eq!(
         fwd_bwd_sets.len(),
