@@ -4,7 +4,9 @@ use std::collections::BTreeSet;
 
 /// A configuration object for various reachability problems.
 pub struct ReachabilityConfig {
+    /// The symbolic graph used for reachability computation.
     pub graph: SymbolicAsyncGraph,
+    /// The set of variables that can be updated during reachability.
     pub variables: BTreeSet<VariableId>,
 }
 

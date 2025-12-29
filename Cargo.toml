@@ -1,7 +1,16 @@
 [package]
-name = "biodivine-lib-algo-scc"
+name = "biodivine-algo-bdd-scc"
 version = "0.1.0"
 edition = "2024"
+authors = ["Samuel Pastva <daemontus@gmail.com>", "Lukáš Chudíček"]
+description = "BDD-based algorithms for symbolic SCC detection in Boolean networks"
+repository = "https://github.com/sybila/biodivine-algo-bdd-scc"
+readme = "README.md"
+keywords = ["bdd", "boolean-network", "scc", "symbolic", "reachability"]
+categories = ["algorithms", "science"]
+license = "MIT"
+rust-version = "1.88"
+include = ["/src/**", "/Cargo.toml", "/README.md", "/LICENSE"]
 
 [features]
 build-binary = ["clap", "env_logger"]
@@ -23,10 +32,10 @@ env_logger = "0.11"
 lto = true
 
 [lib]
-name = "biodivine_lib_algo_scc"
+name = "biodivine_algo_bdd_scc"
 path = "src/lib.rs"
 
 [[bin]]
-name = "scc"
-path = "src/bin/scc.rs"
+name = "biodivine_scc"
+path = "src/bin/biodivine_scc.rs"
 required-features = ["build-binary"]
