@@ -32,6 +32,10 @@ struct Args {
     #[arg(long)]
     long_lived: bool,
 
+    /// Disable constant propagation before analysis (may increase network size but preserves all SCCs)
+    #[arg(long)]
+    no_constant_propagation: bool,
+
     /// Logging verbosity (use -v for info, or -v=LEVEL for specific level)
     #[arg(long, short = 'v', value_name = "LEVEL", num_args = 0..=1, default_missing_value = "info", require_equals = true)]
     verbose: Option<Option<LogLevel>>,
@@ -96,25 +100,35 @@ fn main() {
     Builder::from_default_env().filter_level(log_level).init();
 
     // Load BN file
-    let bn = BooleanNetwork::try_from_file(&args.file)
-        .unwrap_or_else(|e| panic!("Failed to load BN file {}: {}", args.file, e));
+    let bn = BooleanNetwork::try_from_file(&args.file).unwrap_or_else(|e| {
+        eprintln!("Failed to load BN file {}: {}", args.file, e);
+        std::process::exit(1);
+    });
 
     println!("Loaded BN with {} variables.", bn.num_vars());
 
     // Note that constant inlining will not preserve all SCCs, but it is a relatively
     // "fair" way of reducing the problem size for benchmarking.
-    let bn = bn.inline_constants(true, true);
-    println!(
-        "After constant propagation, BN has {} variables.",
-        bn.num_vars()
-    );
+    let bn = if !args.no_constant_propagation {
+        let bn = bn.inline_constants(true, true);
+        println!(
+            "After constant propagation, BN has {} variables.",
+            bn.num_vars()
+        );
+        bn
+    } else {
+        bn
+    };
+
     if bn.num_vars() == 0 {
         println!("Network is fully determined by constants.");
         return;
     }
 
-    let graph = SymbolicAsyncGraph::new(&bn)
-        .unwrap_or_else(|e| panic!("Failed to create symbolic async graph: {}", e));
+    let graph = SymbolicAsyncGraph::new(&bn).unwrap_or_else(|e| {
+        eprintln!("Failed to create symbolic async graph: {}", e);
+        std::process::exit(1);
+    });
 
     // Create SCC config
     let config = SccConfig::new(graph.clone())
