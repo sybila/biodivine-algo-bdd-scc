@@ -13,7 +13,7 @@ use log::{debug, info};
 pub struct XieBeerelState {
     computing: Step,
     remaining: GraphColoredVertices,
-    //pivot_hint: Option<GraphColoredVertices>,
+    pivot_hint: Option<GraphColoredVertices>,
 }
 
 /// Step implementation for the Xie-Beerel attractor algorithm.
@@ -35,8 +35,12 @@ struct Step1 {
 
 struct Step2 {
     basin: GraphColoredVertices,
+    /// Just a copy of our AttractorConfig intended for reachability.
     attractor_config: ReachabilityConfig,
+    /// Gathers attractor states, removing whole colors if a successor escapes the basin.
     attractor: GraphColoredVertices,
+    /// Gathers all successor states that can escape the attractor (if any).
+    future_pivots: GraphColoredVertices,
 }
 
 impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for XieBeerelStep {
@@ -53,25 +57,23 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
                     return Ok(None);
                 }
 
-                // // Try to use a pivot hint (if any) to select the next pivot:
-                // let pivot_hint = if let Some(hint) = state.pivot_hint.take() {
-                //     hint.intersect(&state.remaining)
-                // } else {
-                //     context.graph.mk_empty_colored_vertices()
-                // };
-                //
-                // let pivot = if pivot_hint.is_empty() {
-                //     state.remaining.pick_vertex()
-                // } else {
-                //     pivot_hint.pick_vertex()
-                // };
-
                 info!(
                     "Start next iteration. Remaining ({}).",
                     log_set(&state.remaining),
                 );
 
-                let pivot = state.remaining.pick_vertex();
+                // Try to use a pivot hint (if any) to select the next pivot:
+                let pivot_hint = if let Some(hint) = state.pivot_hint.take() {
+                    hint.intersect(&state.remaining)
+                } else {
+                    context.graph.mk_empty_colored_vertices()
+                };
+
+                let pivot = if pivot_hint.is_empty() {
+                    state.remaining.pick_vertex()
+                } else {
+                    pivot_hint.pick_vertex()
+                };
 
                 let bwd_config =
                     ReachabilityConfig::from(context).restrict_state_space(&state.remaining);
@@ -88,6 +90,7 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
                     basin,
                     attractor: step.pivot.clone(),
                     attractor_config: context.into(),
+                    future_pivots: context.graph.mk_empty_colored_vertices(),
                 });
                 Err(Suspended)
             }
@@ -104,6 +107,7 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
                     // Attractor computation is done! Remove the basin and report the attractor.
                     let attractor = step.attractor.clone();
                     state.remaining = state.remaining.minus(&step.basin);
+                    state.pivot_hint = Some(step.future_pivots.clone());
                     state.computing = Step::Idle;
                     if attractor.is_empty() {
                         Err(Suspended)
@@ -112,16 +116,22 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
                     }
                 } else {
                     step.attractor = step.attractor.union(&successors);
+                    debug!(
+                        "Attractor candidates increased ({}).",
+                        log_set(&step.attractor)
+                    );
 
                     // Check if some successor escaped the basin. If yes, we want to completely
                     // remove all its colors, because they cannot produce an attractor.
-                    let escaped = successors.minus(&step.basin).colors();
+                    // However, we want to keep those successors as possible future pivots.
+                    let escaped = successors.minus(&step.basin);
                     if !escaped.is_empty() {
                         debug!(
                             "Removing {} colors that escape attractor basin.",
                             escaped.exact_cardinality()
                         );
-                        step.attractor = step.attractor.minus_colors(&escaped);
+                        step.attractor = step.attractor.minus_colors(&escaped.colors());
+                        step.future_pivots = step.future_pivots.union(&escaped);
                     }
 
                     Err(Suspended)
@@ -148,7 +158,7 @@ impl From<GraphColoredVertices> for XieBeerelState {
         XieBeerelState {
             computing: Step::Idle,
             remaining: value,
-            //pivot_hint: None,
+            pivot_hint: None,
         }
     }
 }
