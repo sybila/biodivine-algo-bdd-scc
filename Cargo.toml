@@ -1,5 +1,5 @@
 [package]
-name = "biodivine-lib-algo-scc"
+name = "biodivine-algo-bdd-scc"
 version = "0.1.0"
 edition = "2024"
 
@@ -23,10 +23,10 @@ env_logger = "0.11"
 lto = true
 
 [lib]
-name = "biodivine_lib_algo_scc"
+name = "biodivine_algo_bdd_scc"
 path = "src/lib.rs"
 
 [[bin]]
-name = "scc"
-path = "src/bin/scc.rs"
+name = "biodivine_scc"
+path = "src/bin/biodivine_scc.rs"
 required-features = ["build-binary"]
