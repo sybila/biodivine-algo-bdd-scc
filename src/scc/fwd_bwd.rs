@@ -26,10 +26,22 @@ pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
 
 impl From<&SymbolicAsyncGraph> for FwdBwdState {
     fn from(value: &SymbolicAsyncGraph) -> Self {
+        FwdBwdState::from(value.mk_unit_colored_vertices())
+    }
+}
+
+impl From<GraphColoredVertices> for FwdBwdState {
+    fn from(value: GraphColoredVertices) -> Self {
         FwdBwdState {
             computing: Step::Idle,
-            to_process: vec![value.mk_unit_colored_vertices()],
+            to_process: vec![value],
         }
+    }
+}
+
+impl From<&GraphColoredVertices> for FwdBwdState {
+    fn from(value: &GraphColoredVertices) -> Self {
+        FwdBwdState::from(value.clone())
     }
 }
 
