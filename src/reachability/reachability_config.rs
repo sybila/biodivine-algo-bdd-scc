@@ -3,6 +3,7 @@ use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, Symboli
 use std::collections::BTreeSet;
 
 /// A configuration object for various reachability problems.
+#[derive(Clone)]
 pub struct ReachabilityConfig {
     /// The symbolic graph used for reachability computation.
     pub graph: SymbolicAsyncGraph,

@@ -1,8 +1,11 @@
-use biodivine_algo_bdd_scc::attractor::{AttractorConfig, XieBeerelState, XieBeerelStep};
+use biodivine_algo_bdd_scc::attractor::{
+    AttractorConfig, InterleavedTransitionGuidedReduction, ItgrState, XieBeerelAttractors,
+    XieBeerelState,
+};
 use biodivine_lib_param_bn::BooleanNetwork;
-use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 use clap::Parser;
-use computation_process::{Generator, Stateful};
+use computation_process::{Computable, Stateful};
 use env_logger::Builder;
 use log::LevelFilter;
 
@@ -15,7 +18,7 @@ struct Args {
     file: String,
 
     /// Attractor detection algorithm
-    #[arg(long, default_value = "xie-beerel", require_equals = true)]
+    #[arg(long, default_value = "itgr-xie-beerel", require_equals = true)]
     algorithm: Algorithm,
 
     /// Number of attractors to enumerate (0 = all)
@@ -35,6 +38,8 @@ struct Args {
 enum Algorithm {
     #[value(name = "xie-beerel")]
     XieBeerel,
+    #[value(name = "itgr-xie-beerel")]
+    ItgrXieBeerel,
 }
 
 #[derive(Clone, clap::ValueEnum)]
@@ -54,9 +59,39 @@ impl From<LogLevel> for LevelFilter {
     }
 }
 
-/// Wrap XieBeerelAttractors in a Generator to enable iteration
-type XieBeerelAttractorGenerator =
-    Generator<AttractorConfig, XieBeerelState, GraphColoredVertices, XieBeerelStep>;
+/// Enumerate attractors using the Xie-Beerel algorithm with the given configuration.
+/// Returns the number of attractors enumerated.
+fn enumerate_attractors(
+    config: AttractorConfig,
+    initial_state: XieBeerelState,
+    count: usize,
+) -> usize {
+    let generator = XieBeerelAttractors::configure(config, initial_state);
+    let mut enumerated = 0;
+
+    for result in generator {
+        match result {
+            Ok(attractor) => {
+                if count == 0 || enumerated < count {
+                    let cardinality = attractor.exact_cardinality();
+                    println!("Attractor #{}: {} elements", enumerated + 1, cardinality);
+                    enumerated += 1;
+                }
+
+                // Stop if we've reached the count limit
+                if count > 0 && enumerated >= count {
+                    break;
+                }
+            }
+            Err(e) => {
+                eprintln!("Error during attractor computation: {}", e);
+                break;
+            }
+        }
+    }
+
+    enumerated
+}
 
 fn main() {
     let args = Args::parse();
@@ -106,31 +141,36 @@ fn main() {
         Algorithm::XieBeerel => {
             let config = AttractorConfig::new(graph.clone());
             let initial_state = XieBeerelState::from(&graph);
-            let generator = XieBeerelAttractorGenerator::configure(config, initial_state);
-            let mut enumerated = 0;
-
-            for result in generator {
-                match result {
-                    Ok(attractor) => {
-                        if args.count == 0 || enumerated < args.count {
-                            let cardinality = attractor.exact_cardinality();
-                            println!("Attractor #{}: {} elements", enumerated + 1, cardinality);
-                            enumerated += 1;
-                        }
-
-                        // Stop if we've reached the count limit
-                        if args.count > 0 && enumerated >= args.count {
-                            break;
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("Error during attractor computation: {}", e);
-                        break;
-                    }
+            enumerate_attractors(config, initial_state, args.count)
+        }
+        Algorithm::ItgrXieBeerel => {
+            // First, run ITGR to reduce the state space
+            let config = AttractorConfig::new(graph.clone());
+            let itgr_state = ItgrState::new(&graph, &graph.mk_unit_colored_vertices());
+            let mut itgr =
+                InterleavedTransitionGuidedReduction::configure(config.clone(), itgr_state);
+            let reduced = match itgr.compute() {
+                Ok(result) => result,
+                Err(e) => {
+                    eprintln!("Error during ITGR reduction: {}", e);
+                    std::process::exit(1);
                 }
-            }
+            };
 
-            enumerated
+            let active_variables = itgr.state().active_variables().collect::<Vec<_>>();
+            println!(
+                "ITGR reduced state space to {} states and {} active variables (original size: {}).",
+                reduced.exact_cardinality(),
+                active_variables.len(),
+                graph.unit_colored_vertices().exact_cardinality(),
+            );
+
+            // Then run Xie-Beerel on the reduced state space
+            let config = config
+                .restrict_state_space(&reduced)
+                .restrict_variables(&active_variables);
+            let initial_state = XieBeerelState::from(&reduced);
+            enumerate_attractors(config, initial_state, args.count)
         }
     };
 

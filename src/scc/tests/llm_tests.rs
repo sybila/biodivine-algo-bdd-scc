@@ -6,12 +6,11 @@
 //! The tests are generic and can be used to test any algorithm that implements
 //! the `SccAlgorithm` trait.
 
-use crate::scc::tests::sccs_to_sorted_sets;
 use crate::scc::{ChainScc, ChainState, FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm};
 use crate::test_utils::llm_example_network::create_test_network;
 use crate::test_utils::llm_example_network::sets::ATTRACTOR_2;
 use crate::test_utils::llm_transition_builder::from_transitions;
-use crate::test_utils::{init_logger, mk_states};
+use crate::test_utils::{init_logger, mk_states, symbolic_sets_to_sorted_sets};
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use std::collections::HashSet;
 
@@ -30,7 +29,7 @@ fn verify_sccs(
         .collect();
 
     // Convert found SCCs to sets of state numbers using the shared helper
-    let found_sets = sccs_to_sorted_sets(graph, &found_sccs, num_vars);
+    let found_sets = symbolic_sets_to_sorted_sets(graph, &found_sccs, num_vars);
 
     // Sort expected sets for easier comparison (by size, then sorted state numbers)
     expected_sets.sort_by_cached_key(|s| {
