@@ -1,10 +1,10 @@
 [![Crates.io](https://img.shields.io/crates/v/biodivine-algo-bdd-scc?style=flat-square)](https://crates.io/crates/biodivine-algo-bdd-scc)
 [![Api Docs](https://img.shields.io/badge/docs-api-yellowgreen?style=flat-square)](https://docs.rs/biodivine-algo-bdd-scc/)
-[![Continuous integration](https://img.shields.io/github/actions/workflow/status/daemontus/biodivine-algo-bdd-scc/build.yml?branch=main&style=flat-square)](https://github.com/daemontus/biodivine-algo-bdd-scc/actions/workflows/build.yml)
-[![Coverage](https://img.shields.io/codecov/c/github/daemontus/biodivine-algo-bdd-scc?style=flat-square)](https://codecov.io/gh/daemontus/biodivine-algo-bdd-scc)
-[![GitHub issues](https://img.shields.io/github/issues/daemontus/biodivine-algo-bdd-scc?style=flat-square)](https://github.com/daemontus/biodivine-algo-bdd-scc/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/daemontus/biodivine-algo-bdd-scc?style=flat-square)](https://github.com/daemontus/biodivine-algo-bdd-scc/commits/main)
-[![Crates.io](https://img.shields.io/crates/l/biodivine-algo-bdd-scc?style=flat-square)](https://github.com/daemontus/biodivine-algo-bdd-scc/blob/main/LICENSE)
+[![Continuous integration](https://img.shields.io/github/actions/workflow/status/sybila/biodivine-algo-bdd-scc/build.yml?branch=main&style=flat-square)](https://github.com/sybila/biodivine-algo-bdd-scc/actions/workflows/build.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/sybila/biodivine-algo-bdd-scc?style=flat-square)](https://codecov.io/gh/sybila/biodivine-algo-bdd-scc)
+[![GitHub issues](https://img.shields.io/github/issues/sybila/biodivine-algo-bdd-scc?style=flat-square)](https://github.com/sybila/biodivine-algo-bdd-scc/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/sybila/biodivine-algo-bdd-scc?style=flat-square)](https://github.com/sybila/biodivine-algo-bdd-scc/commits/main)
+[![Crates.io](https://img.shields.io/crates/l/biodivine-algo-bdd-scc?style=flat-square)](https://github.com/sybila/biodivine-algo-bdd-scc/blob/main/LICENSE)
 
 # Biodivine BDD-based SCC detection algorithms
 
