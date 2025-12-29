@@ -61,6 +61,7 @@ use biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices;
 #[cfg(test)]
 mod test_utils;
 
+pub mod attractor;
 pub mod reachability;
 pub mod scc;
 pub mod trimming;

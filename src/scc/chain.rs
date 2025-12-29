@@ -18,11 +18,23 @@ pub struct ChainState {
 
 impl From<&SymbolicAsyncGraph> for ChainState {
     fn from(value: &SymbolicAsyncGraph) -> Self {
+        ChainState::from(value.mk_unit_colored_vertices())
+    }
+}
+
+impl From<&GraphColoredVertices> for ChainState {
+    fn from(value: &GraphColoredVertices) -> Self {
+        ChainState::from(value.clone())
+    }
+}
+
+impl From<GraphColoredVertices> for ChainState {
+    fn from(value: GraphColoredVertices) -> Self {
         ChainState {
             computing: Step::Idle,
             to_process: vec![Step0 {
-                full_universe: value.mk_unit_colored_vertices(),
-                pivot_hint: value.mk_empty_colored_vertices(),
+                full_universe: value,
+                pivot_hint: None,
             }],
         }
     }
@@ -125,7 +137,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
 
                     state.to_process.push(Step0 {
                         full_universe: remaining_basin,
-                        pivot_hint: hint,
+                        pivot_hint: Some(hint),
                     });
                 }
 
@@ -152,7 +164,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
 
                     state.to_process.push(Step0 {
                         full_universe: remaining_rest,
-                        pivot_hint: hint,
+                        pivot_hint: Some(hint),
                     });
                 }
 
@@ -177,7 +189,7 @@ enum Step {
 
 struct Step0 {
     full_universe: GraphColoredVertices,
-    pivot_hint: GraphColoredVertices,
+    pivot_hint: Option<GraphColoredVertices>,
 }
 
 struct Step1 {
@@ -211,11 +223,13 @@ impl Step0 {
                 .should_trim
                 .build_computation(&context.graph, self.full_universe.clone()),
             full_universe: context.graph.mk_empty_colored_vertices(),
-            pivot_hint: context.graph.mk_empty_colored_vertices(),
+            pivot_hint: self
+                .pivot_hint
+                .clone()
+                .unwrap_or_else(|| context.graph.mk_empty_colored_vertices()),
         };
 
         std::mem::swap(&mut result.full_universe, &mut self.full_universe);
-        std::mem::swap(&mut result.pivot_hint, &mut self.pivot_hint);
 
         result
     }

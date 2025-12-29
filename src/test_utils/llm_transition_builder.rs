@@ -388,6 +388,7 @@ pub fn from_transitions(
 
     // Parse and return the Boolean Network
     BooleanNetwork::try_from(aeon_model.as_str())
+        .and_then(|it| it.infer_valid_graph())
         .map_err(|e| TransitionError::ParseError(format!("{:?}", e)))
 }
 

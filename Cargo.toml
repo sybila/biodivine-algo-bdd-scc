@@ -39,3 +39,8 @@ path = "src/lib.rs"
 name = "biodivine_scc"
 path = "src/bin/biodivine_scc.rs"
 required-features = ["build-binary"]
+
+[[bin]]
+name = "biodivine_attractor"
+path = "src/bin/biodivine_attractor.rs"
+required-features = ["build-binary"]
