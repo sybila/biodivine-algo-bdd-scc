@@ -1,8 +1,8 @@
-use biodivine_algo_bdd_scc::attractor::{AttractorConfig, XieBeerelState, XieBeerelStep};
+use biodivine_algo_bdd_scc::attractor::{AttractorConfig, XieBeerelAttractors, XieBeerelState};
 use biodivine_lib_param_bn::BooleanNetwork;
-use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
+use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 use clap::Parser;
-use computation_process::{Generator, Stateful};
+use computation_process::Stateful;
 use env_logger::Builder;
 use log::LevelFilter;
 
@@ -54,10 +54,6 @@ impl From<LogLevel> for LevelFilter {
     }
 }
 
-/// Wrap XieBeerelAttractors in a Generator to enable iteration
-type XieBeerelAttractorGenerator =
-    Generator<AttractorConfig, XieBeerelState, GraphColoredVertices, XieBeerelStep>;
-
 fn main() {
     let args = Args::parse();
 
@@ -106,7 +102,7 @@ fn main() {
         Algorithm::XieBeerel => {
             let config = AttractorConfig::new(graph.clone());
             let initial_state = XieBeerelState::from(&graph);
-            let generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+            let generator = XieBeerelAttractors::configure(config, initial_state);
             let mut enumerated = 0;
 
             for result in generator {

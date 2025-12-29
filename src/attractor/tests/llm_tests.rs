@@ -2,7 +2,7 @@
 //!
 //! See `llm_example_network.rs` for the complete documentation of the test network structure.
 
-use crate::attractor::{AttractorConfig, XieBeerelState};
+use crate::attractor::{AttractorConfig, XieBeerelAttractors, XieBeerelState};
 use crate::test_utils::llm_example_network::create_test_network;
 use crate::test_utils::llm_example_network::sets::{ATTRACTOR_1, ATTRACTOR_2};
 use crate::test_utils::llm_transition_builder::from_transitions;
@@ -10,15 +10,7 @@ use crate::test_utils::{init_logger, mk_states};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
-use computation_process::{Generator, Stateful};
-
-/// Wrap XieBeerelAttractors in a Generator to enable iteration
-type XieBeerelAttractorGenerator = Generator<
-    AttractorConfig,
-    XieBeerelState,
-    GraphColoredVertices,
-    crate::attractor::XieBeerelStep,
->;
+use computation_process::Stateful;
 
 /// Verify that the attractors found match the expected attractors exactly.
 /// This handles the fact that attractors can be returned in arbitrary order.
@@ -90,7 +82,7 @@ fn test_find_all_attractors_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -108,7 +100,7 @@ fn test_find_fixed_point_attractor_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -130,7 +122,7 @@ fn test_find_cycle_attractor_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -152,7 +144,7 @@ fn test_attractors_are_non_empty_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -172,7 +164,7 @@ fn test_attractors_are_disjoint_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -201,7 +193,7 @@ fn test_attractors_cover_reachable_states_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -243,7 +235,7 @@ fn test_single_fixed_point_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -274,7 +266,7 @@ fn test_single_2_cycle_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -301,7 +293,7 @@ fn test_single_4_cycle_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -337,7 +329,7 @@ fn test_two_disjoint_attractors_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -374,7 +366,7 @@ fn test_two_disjoint_cycles_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -402,7 +394,7 @@ fn test_multiple_fixed_points_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -434,7 +426,7 @@ fn test_single_4_cycle_3vars_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
@@ -469,7 +461,7 @@ fn test_cycle_with_transient_states_impl() -> Cancellable<()> {
     let config = AttractorConfig::new(graph.clone());
     let initial_state = XieBeerelState::from(&graph);
 
-    let mut generator = XieBeerelAttractorGenerator::configure(config, initial_state);
+    let mut generator = XieBeerelAttractors::configure(config, initial_state);
     let mut attractors = Vec::new();
     while let Some(result) = generator.next() {
         attractors.push(result?);
