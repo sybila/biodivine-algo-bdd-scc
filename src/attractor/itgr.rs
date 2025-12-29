@@ -262,7 +262,7 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
                         debug!(
                             "[{}] Extended component increased ({}).",
                             var,
-                            log_set(&x.forward)
+                            log_set(&x.extended_component)
                         );
                         Err(Suspended)
                     }

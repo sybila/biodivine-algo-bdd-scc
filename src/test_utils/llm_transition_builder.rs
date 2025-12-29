@@ -395,7 +395,7 @@ pub fn from_transitions(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::mk_state;
+    use crate::test_utils::{collect_state_numbers, mk_state};
     use biodivine_lib_param_bn::biodivine_std::traits::Set;
     use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 
@@ -416,27 +416,6 @@ mod tests {
                 collect_state_numbers(graph, &successors, num_vars)
             );
         }
-    }
-
-    /// Collect all state numbers from a GraphColoredVertices set.
-    /// This is used for debugging/error messages.
-    fn collect_state_numbers(
-        graph: &SymbolicAsyncGraph,
-        set: &biodivine_lib_param_bn::symbolic_async_graph::GraphColoredVertices,
-        num_vars: usize,
-    ) -> Vec<u32> {
-        let mut states = Vec::new();
-
-        // Iterate over all possible states and check if they're in the set
-        let max_state = (1u32 << num_vars) - 1;
-        for state in 0..=max_state {
-            let state_set = mk_state(graph, state);
-            if !state_set.intersect(set).is_empty() {
-                states.push(state);
-            }
-        }
-
-        states
     }
 
     /// Verify that states with transitions have ONLY the declared transitions (no extra ones).
