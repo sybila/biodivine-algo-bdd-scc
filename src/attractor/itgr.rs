@@ -141,17 +141,6 @@ impl ItgrState {
     }
 }
 
-/// A helper function used in debug asserts to verify algorithm invariants.
-fn is_forward_closed(graph: &SymbolicAsyncGraph, set: &GraphColoredVertices) -> bool {
-    for var in graph.variables() {
-        let post = graph.var_can_post_out(var, set);
-        if !post.is_empty() {
-            return false;
-        }
-    }
-    true
-}
-
 impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrStep {
     fn step(context: &AttractorConfig, state: &mut ItgrState) -> Completable<GraphColoredVertices> {
         // First, if we have some states to remove, remove them from all remaining reductions:
@@ -174,8 +163,6 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
                     state.remaining_reachability.variables.remove(&var);
                 }
             }
-
-            debug_assert!(is_forward_closed(&context.graph, &state.remaining_set));
 
             info!(
                 "Remaining set reduced ({}). Active tasks: {}",
@@ -212,8 +199,6 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
                     if post.is_empty() {
                         // Forward reachability done.
                         let forward = x.forward.clone();
-                        debug_assert!(is_forward_closed(&context.graph, &forward));
-                        debug_assert!(forward.is_subset(&state.remaining_set));
 
                         state.reductions.pop();
                         info!(
@@ -272,22 +257,32 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
                             log_set(&x.extended_component)
                         );
                         let bottom = x.forward.minus(&x.extended_component);
-                        debug_assert!(x.extended_component.is_subset(&state.remaining_set));
-                        debug_assert!(x.extended_component.is_subset(&x.forward));
-                        debug_assert!(is_forward_closed(&context.graph, &x.forward));
 
                         state.reductions.pop();
-                        if !bottom.is_empty() {
+
+                        // In theory, it is possible that the initial set that we started with
+                        // was not forward-closed (ITGR can be performed on any set). In such
+                        // a case, ITGR will try to find the "bottom most" states in the given
+                        // set but not eliminate them even if they can escape. This extra set
+                        // is added to also cover any states that may be escaping -- they are
+                        // added as "seed" states for basin computation, but not to the bottom
+                        // set. This means anything that can reach these states will be removed
+                        // by the bottom-basin process.
+                        let is_var_closed =
+                            context.graph.var_can_post_out(var, &state.remaining_set);
+
+                        if !bottom.is_empty() || !is_var_closed.is_empty() {
                             info!(
                                 "[{}] Spawning bottom-basin reduction ({})",
                                 var,
                                 log_set(&bottom)
                             );
+
                             state.reductions.push((
                                 var,
                                 Step::BottomBasin(StepBottomBasin {
                                     bottom: bottom.clone(),
-                                    basin: bottom,
+                                    basin: bottom.union(&is_var_closed),
                                 }),
                             ));
                         }
@@ -360,5 +355,28 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
             // All reductions are done. We can return remaining states.
             Ok(state.remaining_set.clone())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::attractor::{InterleavedTransitionGuidedReduction, ItgrState};
+    use crate::test_utils::llm_example_network::create_test_network;
+    use crate::test_utils::llm_example_network::states::{S001, S010, S011, S100, S101};
+    use crate::test_utils::{init_logger, mk_states};
+    use biodivine_lib_param_bn::biodivine_std::traits::Set;
+    use cancel_this::Cancellable;
+    use computation_process::Algorithm;
+
+    #[test]
+    fn non_closed_itgr() -> Cancellable<()> {
+        init_logger();
+        let graph = create_test_network();
+        // This should be all states except for the actual attractors.
+        let initial_state =
+            ItgrState::new(&graph, &mk_states(&graph, &[S011, S101, S001, S010, S100]));
+        let reduced = InterleavedTransitionGuidedReduction::run(&graph, initial_state)?;
+        assert!(reduced.is_empty());
+        Ok(())
     }
 }
