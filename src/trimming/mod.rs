@@ -48,6 +48,7 @@ pub type TrimSinksAndSources =
 
 /// Configuration for trimming behavior during SCC computation.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TrimSetting {
     /// Trim both sinks and sources (default).
     #[default]

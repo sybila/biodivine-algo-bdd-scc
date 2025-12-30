@@ -6,6 +6,9 @@
 //! The tests are generic and can be used to test any algorithm that implements
 //! the `SccAlgorithm` trait.
 
+use crate::reachability::{
+    BackwardReachability, BackwardReachabilityBfs, ForwardReachability, ForwardReachabilityBfs,
+};
 use crate::scc::{ChainScc, ChainState, FwdBwdScc, FwdBwdSccBfs, FwdBwdState, SccAlgorithm};
 use crate::test_utils::llm_example_network::create_test_network;
 use crate::test_utils::llm_example_network::sets::ATTRACTOR_2;
@@ -382,104 +385,144 @@ where
 
 #[test]
 fn test_single_2_cycle_fwd_bwd() {
-    test_single_2_cycle_impl::<FwdBwdState, FwdBwdScc>()
+    test_single_2_cycle_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>()
 }
 
 #[test]
 fn test_single_3_cycle_fwd_bwd() {
-    test_single_3_cycle_impl::<FwdBwdState, FwdBwdScc>()
+    test_single_3_cycle_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>()
 }
 
 #[test]
 fn test_two_disjoint_2_cycles_fwd_bwd() {
-    test_two_disjoint_2_cycles_impl::<FwdBwdState, FwdBwdScc>()
+    test_two_disjoint_2_cycles_impl::<
+        FwdBwdState<ForwardReachability, BackwardReachability>,
+        FwdBwdScc,
+    >()
 }
 
 #[test]
 fn test_multiple_sccs_different_sizes_fwd_bwd() {
-    test_multiple_sccs_different_sizes_impl::<FwdBwdState, FwdBwdScc>()
+    test_multiple_sccs_different_sizes_impl::<
+        FwdBwdState<ForwardReachability, BackwardReachability>,
+        FwdBwdScc,
+    >()
 }
 
 #[test]
 fn test_scc_with_branching_fwd_bwd() {
-    test_scc_with_branching_impl::<FwdBwdState, FwdBwdScc>()
+    test_scc_with_branching_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>(
+    )
 }
 
 #[test]
 fn test_only_trivial_sccs_fwd_bwd() {
-    test_only_trivial_sccs_impl::<FwdBwdState, FwdBwdScc>()
+    test_only_trivial_sccs_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>(
+    )
 }
 
 #[test]
 fn test_4_cycle_fwd_bwd() {
-    test_4_cycle_impl::<FwdBwdState, FwdBwdScc>()
+    test_4_cycle_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>()
 }
 
 #[test]
 fn test_scc_with_multiple_paths_fwd_bwd() {
-    test_scc_with_multiple_paths_impl::<FwdBwdState, FwdBwdScc>()
+    test_scc_with_multiple_paths_impl::<
+        FwdBwdState<ForwardReachability, BackwardReachability>,
+        FwdBwdScc,
+    >()
 }
 
 #[test]
 fn test_llm_example_network_fwd_bwd() {
-    test_llm_example_network_impl::<FwdBwdState, FwdBwdScc>()
+    test_llm_example_network_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>(
+    )
 }
 
 #[test]
 fn test_complex_network_fwd_bwd() {
-    test_complex_network_impl::<FwdBwdState, FwdBwdScc>()
+    test_complex_network_impl::<FwdBwdState<ForwardReachability, BackwardReachability>, FwdBwdScc>()
 }
 
 // ========== Tests for FwdBwdSccBfs ==========
 
 #[test]
 fn test_single_2_cycle_fwd_bwd_bfs() {
-    test_single_2_cycle_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_single_2_cycle_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_single_3_cycle_fwd_bwd_bfs() {
-    test_single_3_cycle_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_single_3_cycle_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_two_disjoint_2_cycles_fwd_bwd_bfs() {
-    test_two_disjoint_2_cycles_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_two_disjoint_2_cycles_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_multiple_sccs_different_sizes_fwd_bwd_bfs() {
-    test_multiple_sccs_different_sizes_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_multiple_sccs_different_sizes_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_scc_with_branching_fwd_bwd_bfs() {
-    test_scc_with_branching_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_scc_with_branching_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_only_trivial_sccs_fwd_bwd_bfs() {
-    test_only_trivial_sccs_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_only_trivial_sccs_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_4_cycle_fwd_bwd_bfs() {
-    test_4_cycle_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_4_cycle_impl::<FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>, FwdBwdSccBfs>(
+    )
 }
 
 #[test]
 fn test_scc_with_multiple_paths_fwd_bwd_bfs() {
-    test_scc_with_multiple_paths_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_scc_with_multiple_paths_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_llm_example_network_fwd_bwd_bfs() {
-    test_llm_example_network_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_llm_example_network_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 #[test]
 fn test_complex_network_fwd_bwd_bfs() {
-    test_complex_network_impl::<FwdBwdState, FwdBwdSccBfs>()
+    test_complex_network_impl::<
+        FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
+        FwdBwdSccBfs,
+    >()
 }
 
 // ========== Tests for ChainScc ==========

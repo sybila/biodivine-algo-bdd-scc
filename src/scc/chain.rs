@@ -1,17 +1,17 @@
 use crate::log_set;
-use crate::reachability::ReachabilityAlgorithm;
+use crate::reachability::{BackwardReachability, ForwardReachability};
 use crate::scc::{SccConfig, filter_scc};
 use crate::trimming::TrimComputation;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::Incomplete::Suspended;
-use computation_process::{Completable, Computable, DynComputable, GeneratorStep};
+use computation_process::{Completable, Computable, GeneratorStep, Stateful};
 use log::{debug, info};
-use std::marker::PhantomData;
 
 /// Internal state for the chain-based SCC algorithm.
 ///
 /// This struct tracks the current computation phase and pending work items.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ChainState {
     computing: Step,
     to_process: Vec<Step0>,
@@ -45,13 +45,9 @@ impl From<GraphColoredVertices> for ChainState {
 ///
 /// This type is parameterized by forward and backward reachability algorithms
 /// and implements the [`GeneratorStep`] trait for SCC enumeration.
-pub struct ChainStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
-    _phantom: PhantomData<(FWD, BWD)>,
-}
+pub struct ChainStep;
 
-impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
-    GeneratorStep<SccConfig, ChainState, GraphColoredVertices> for ChainStep<FWD, BWD>
-{
+impl GeneratorStep<SccConfig, ChainState, GraphColoredVertices> for ChainStep {
     fn step(
         context: &SccConfig,
         state: &mut ChainState,
@@ -90,7 +86,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                 Err(Suspended)
             }
             Step::Trimming(step) => {
-                let Some(trimmed) = step.try_advance::<BWD>(context)? else {
+                let Some(trimmed) = step.try_advance(context)? else {
                     // If the set is empty after trimming/filtering, reset the state and stop.
                     state.computing = Step::Idle;
                     return Err(Suspended);
@@ -100,7 +96,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                 Err(Suspended)
             }
             Step::Basin(step) => {
-                state.computing = Step::Scc(step.try_advance::<FWD>(context)?);
+                state.computing = Step::Scc(step.try_advance(context)?);
                 Err(Suspended)
             }
             Step::Scc(step) => {
@@ -181,6 +177,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum Step {
     Idle,
     Trimming(Box<Step1>),
@@ -188,27 +185,31 @@ enum Step {
     Scc(Box<Step3>),
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Step0 {
     full_universe: GraphColoredVertices,
     pivot_hint: Option<GraphColoredVertices>,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Step1 {
     full_universe: GraphColoredVertices,
     pivot_hint: GraphColoredVertices,
     universe: TrimComputation,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Step2 {
     universe: GraphColoredVertices,
     pivot: GraphColoredVertices,
-    basin: DynComputable<GraphColoredVertices>,
+    basin: BackwardReachability,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Step3 {
     universe: GraphColoredVertices,
     basin: GraphColoredVertices,
-    scc: DynComputable<GraphColoredVertices>,
+    scc: ForwardReachability,
 }
 
 struct IterationResult {
@@ -237,10 +238,7 @@ impl Step0 {
 }
 
 impl Step1 {
-    pub fn try_advance<BWD: ReachabilityAlgorithm>(
-        &mut self,
-        context: &SccConfig,
-    ) -> Completable<Option<Box<Step2>>> {
+    pub fn try_advance(&mut self, context: &SccConfig) -> Completable<Option<Box<Step2>>> {
         let universe = self.universe.try_compute()?;
 
         if universe.is_empty() {
@@ -283,7 +281,7 @@ impl Step1 {
         let graph = context.graph.restrict(&universe);
 
         let result = Step2 {
-            basin: BWD::configure(&graph, pivot.clone()).dyn_computable(),
+            basin: BackwardReachability::configure(&graph, pivot.clone()),
             universe,
             pivot,
         };
@@ -293,14 +291,11 @@ impl Step1 {
 }
 
 impl Step2 {
-    pub fn try_advance<FWD: ReachabilityAlgorithm>(
-        &mut self,
-        context: &SccConfig,
-    ) -> Completable<Box<Step3>> {
+    pub fn try_advance(&mut self, context: &SccConfig) -> Completable<Box<Step3>> {
         let basin = self.basin.try_compute()?;
         let basin_graph = context.graph.restrict(&basin);
         let mut result = Step3 {
-            scc: FWD::configure(&basin_graph, self.pivot.clone()).dyn_computable(),
+            scc: ForwardReachability::configure(&basin_graph, self.pivot.clone()),
             universe: basin_graph.mk_empty_colored_vertices(),
             basin,
         };

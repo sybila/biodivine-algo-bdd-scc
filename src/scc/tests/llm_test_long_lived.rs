@@ -89,7 +89,8 @@ fn test_with_long_lived_filter_reports_only_long_lived_scc() {
     let graph = create_long_lived_test_network();
 
     // Enable long-lived filtering
-    let config = SccConfig::new(graph.clone()).filter_long_lived(true);
+    let mut config = SccConfig::new(graph.clone());
+    config.filter_long_lived = true;
     assert!(config.filter_long_lived, "Should be enabled");
 
     let mut generator = FwdBwdScc::configure(config, &graph);

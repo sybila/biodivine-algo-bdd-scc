@@ -5,8 +5,15 @@ use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, Symboli
 
 /// A configuration object for various SCC detection problems.
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SccConfig {
-    /// The graph used for SCC computation.
+    /// The graph used for SCC computation. You can restrict this graph to a subset
+    /// of vertices using [`SymbolicAsyncGraph::restrict`], but keep in mind that this also
+    /// eliminates the associated transitions, potentially creating new "fake" SCCs
+    /// unless the new restriction is SCC-closed in the original graph.
+    ///
+    /// If you are only interested in a subset of SCCs, you want to instead limit the
+    /// initial set used by the algorithm.
     pub graph: SymbolicAsyncGraph,
     /// Indicate that the algorithm should try to trim trivial components (default: both).
     pub should_trim: TrimSetting,
@@ -37,18 +44,6 @@ impl SccConfig {
             should_trim: TrimSetting::default(),
             filter_long_lived: false,
         }
-    }
-
-    /// Set trimming of trivial components (none/sinks/sources/both; default: both).
-    pub fn should_trim(mut self, should_trim: TrimSetting) -> Self {
-        self.should_trim = should_trim;
-        self
-    }
-
-    /// Enable/disable long lived filtering (default: false).
-    pub fn filter_long_lived(mut self, filter: bool) -> Self {
-        self.filter_long_lived = filter;
-        self
     }
 
     /// If long-lived filtering is enabled, apply it. Otherwise, return the same set.

@@ -5,15 +5,16 @@ use crate::trimming::TrimComputation;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::Incomplete::Suspended;
-use computation_process::{Completable, Computable, DynComputable, GeneratorStep};
+use computation_process::{Completable, Computable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
 /// Internal state for the forward-backward SCC algorithm.
 ///
 /// This struct tracks the current computation phase and pending work items.
-pub struct FwdBwdState {
-    computing: Step,
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FwdBwdState<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
+    computing: Step<FWD, BWD>,
     to_process: Vec<GraphColoredVertices>,
 }
 
@@ -25,13 +26,17 @@ pub struct FwdBwdStep<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
     _phantom: PhantomData<(FWD, BWD)>,
 }
 
-impl From<&SymbolicAsyncGraph> for FwdBwdState {
+impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> From<&SymbolicAsyncGraph>
+    for FwdBwdState<FWD, BWD>
+{
     fn from(value: &SymbolicAsyncGraph) -> Self {
         FwdBwdState::from(value.mk_unit_colored_vertices())
     }
 }
 
-impl From<GraphColoredVertices> for FwdBwdState {
+impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> From<GraphColoredVertices>
+    for FwdBwdState<FWD, BWD>
+{
     fn from(value: GraphColoredVertices) -> Self {
         FwdBwdState {
             computing: Step::Idle,
@@ -40,18 +45,20 @@ impl From<GraphColoredVertices> for FwdBwdState {
     }
 }
 
-impl From<&GraphColoredVertices> for FwdBwdState {
+impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> From<&GraphColoredVertices>
+    for FwdBwdState<FWD, BWD>
+{
     fn from(value: &GraphColoredVertices) -> Self {
         FwdBwdState::from(value.clone())
     }
 }
 
 impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
-    GeneratorStep<SccConfig, FwdBwdState, GraphColoredVertices> for FwdBwdStep<FWD, BWD>
+    GeneratorStep<SccConfig, FwdBwdState<FWD, BWD>, GraphColoredVertices> for FwdBwdStep<FWD, BWD>
 {
     fn step(
         context: &SccConfig,
-        state: &mut FwdBwdState,
+        state: &mut FwdBwdState<FWD, BWD>,
     ) -> Completable<Option<GraphColoredVertices>> {
         match &mut state.computing {
             Step::Idle => {
@@ -136,29 +143,34 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
     }
 }
 
-enum Step {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+enum Step<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm> {
     Idle,
     Trimming(Box<Step1>),
-    Backward(Box<Step2>),
-    Forward(Box<Step3>),
+    Backward(Box<Step2<BWD>>),
+    Forward(Box<Step3<FWD>>),
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Step1 {
     universe: TrimComputation,
 }
 
-struct Step2 {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+struct Step2<BWD: ReachabilityAlgorithm> {
     pivot: GraphColoredVertices,
     universe: GraphColoredVertices,
-    backward: DynComputable<GraphColoredVertices>,
+    backward: BWD,
 }
 
-struct Step3 {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+struct Step3<FWD> {
     universe: GraphColoredVertices,
     backward: GraphColoredVertices,
-    forward: DynComputable<GraphColoredVertices>,
+    forward: FWD,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct IterationResult {
     universe: GraphColoredVertices,
     forward: GraphColoredVertices,
@@ -176,7 +188,7 @@ impl Step1 {
     pub fn try_advance<BWD: ReachabilityAlgorithm>(
         &mut self,
         context: &SccConfig,
-    ) -> Completable<Option<Step2>> {
+    ) -> Completable<Option<Step2<BWD>>> {
         let universe = self.universe.try_compute()?;
 
         if universe.is_empty() {
@@ -192,23 +204,23 @@ impl Step1 {
         let graph = context.graph.restrict(&universe);
         let pivot = universe.pick_vertex();
         Ok(Some(Step2 {
-            backward: BWD::configure(&graph, pivot.clone()).dyn_computable(),
+            backward: BWD::configure(&graph, pivot.clone()),
             universe,
             pivot,
         }))
     }
 }
 
-impl Step2 {
+impl<BWD: ReachabilityAlgorithm> Step2<BWD> {
     pub fn try_advance<FWD: ReachabilityAlgorithm>(
         &mut self,
         context: &SccConfig,
-    ) -> Completable<Step3> {
+    ) -> Completable<Step3<FWD>> {
         let backward = self.backward.try_compute()?;
         let graph = context.graph.restrict(&self.universe);
 
         let mut result = Step3 {
-            forward: FWD::configure(&graph, self.pivot.clone()).dyn_computable(),
+            forward: FWD::configure(&graph, self.pivot.clone()),
             universe: context.graph.mk_empty_colored_vertices(),
             backward,
         };
@@ -219,7 +231,7 @@ impl Step2 {
     }
 }
 
-impl Step3 {
+impl<FWD: ReachabilityAlgorithm> Step3<FWD> {
     pub fn try_advance(&mut self, context: &SccConfig) -> Completable<IterationResult> {
         let forward = self.forward.try_compute()?;
         let scc = forward.intersect(&self.backward);
