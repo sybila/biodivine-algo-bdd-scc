@@ -1,6 +1,6 @@
 [package]
 name = "biodivine-algo-bdd-scc"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Samuel Pastva <daemontus@gmail.com>", "Lukáš Chudíček"]
 description = "BDD-based algorithms for symbolic SCC detection in Boolean networks"
