@@ -1,10 +1,11 @@
 use crate::log_set;
 use crate::reachability::ReachabilityAlgorithm;
 use crate::scc::{SccConfig, filter_scc};
+use crate::trimming::TrimComputation;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::Incomplete::Suspended;
-use computation_process::{Completable, DynComputable, GeneratorStep};
+use computation_process::{Completable, Computable, DynComputable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
@@ -182,9 +183,9 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
 
 enum Step {
     Idle,
-    Trimming(Step1),
-    Basin(Step2),
-    Scc(Step3),
+    Trimming(Box<Step1>),
+    Basin(Box<Step2>),
+    Scc(Box<Step3>),
 }
 
 struct Step0 {
@@ -195,7 +196,7 @@ struct Step0 {
 struct Step1 {
     full_universe: GraphColoredVertices,
     pivot_hint: GraphColoredVertices,
-    universe: DynComputable<GraphColoredVertices>,
+    universe: TrimComputation,
 }
 
 struct Step2 {
@@ -217,7 +218,7 @@ struct IterationResult {
 }
 
 impl Step0 {
-    pub fn advance(&mut self, context: &SccConfig) -> Step1 {
+    pub fn advance(&mut self, context: &SccConfig) -> Box<Step1> {
         let mut result = Step1 {
             universe: context
                 .should_trim
@@ -231,7 +232,7 @@ impl Step0 {
 
         std::mem::swap(&mut result.full_universe, &mut self.full_universe);
 
-        result
+        Box::new(result)
     }
 }
 
@@ -239,7 +240,7 @@ impl Step1 {
     pub fn try_advance<BWD: ReachabilityAlgorithm>(
         &mut self,
         context: &SccConfig,
-    ) -> Completable<Option<Step2>> {
+    ) -> Completable<Option<Box<Step2>>> {
         let universe = self.universe.try_compute()?;
 
         if universe.is_empty() {
@@ -287,7 +288,7 @@ impl Step1 {
             pivot,
         };
 
-        Ok(Some(result))
+        Ok(Some(Box::new(result)))
     }
 }
 
@@ -295,7 +296,7 @@ impl Step2 {
     pub fn try_advance<FWD: ReachabilityAlgorithm>(
         &mut self,
         context: &SccConfig,
-    ) -> Completable<Step3> {
+    ) -> Completable<Box<Step3>> {
         let basin = self.basin.try_compute()?;
         let basin_graph = context.graph.restrict(&basin);
         let mut result = Step3 {
@@ -306,7 +307,7 @@ impl Step2 {
 
         std::mem::swap(&mut result.universe, &mut self.universe);
 
-        Ok(result)
+        Ok(Box::new(result))
     }
 }
 

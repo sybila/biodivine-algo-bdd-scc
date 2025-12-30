@@ -1,10 +1,11 @@
 use crate::log_set;
 use crate::reachability::ReachabilityAlgorithm;
 use crate::scc::{SccConfig, filter_scc};
+use crate::trimming::TrimComputation;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use computation_process::Incomplete::Suspended;
-use computation_process::{Completable, DynComputable, GeneratorStep};
+use computation_process::{Completable, Computable, DynComputable, GeneratorStep};
 use log::{debug, info};
 use std::marker::PhantomData;
 
@@ -78,7 +79,7 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                         .sum::<usize>()
                 );
 
-                state.computing = Step::Trimming(Step1::new(context, todo));
+                state.computing = Step::Trimming(Box::new(Step1::new(context, todo)));
                 Err(Suspended)
             }
             Step::Trimming(step) => {
@@ -88,11 +89,11 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
                     return Err(Suspended);
                 };
 
-                state.computing = Step::Backward(trimmed);
+                state.computing = Step::Backward(Box::new(trimmed));
                 Err(Suspended)
             }
             Step::Backward(step) => {
-                state.computing = Step::Forward(step.try_advance::<FWD>(context)?);
+                state.computing = Step::Forward(Box::new(step.try_advance::<FWD>(context)?));
                 Err(Suspended)
             }
             Step::Forward(step) => {
@@ -137,13 +138,13 @@ impl<FWD: ReachabilityAlgorithm, BWD: ReachabilityAlgorithm>
 
 enum Step {
     Idle,
-    Trimming(Step1),
-    Backward(Step2),
-    Forward(Step3),
+    Trimming(Box<Step1>),
+    Backward(Box<Step2>),
+    Forward(Box<Step3>),
 }
 
 struct Step1 {
-    universe: DynComputable<GraphColoredVertices>,
+    universe: TrimComputation,
 }
 
 struct Step2 {
