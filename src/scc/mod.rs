@@ -33,8 +33,8 @@
 //! let graph = SymbolicAsyncGraph::new(&bn).unwrap();
 //!
 //! // Configure with trimming and long-lived filtering
-//! let config = SccConfig::new(graph.clone())
-//!     .filter_long_lived(true);
+//! let mut config = SccConfig::new(graph.clone());
+//! config.filter_long_lived = true;
 //!
 //! for scc in FwdBwdScc::configure(config, &graph) {
 //!     let scc = scc.unwrap();
@@ -81,7 +81,7 @@ impl<STATE, T: GenAlgorithm<SccConfig, STATE, GraphColoredVertices> + 'static> S
 ///  - As with all other SCC algorithms here, only non-trivial SCCs are returned.
 pub type FwdBwdScc = Generator<
     SccConfig,
-    FwdBwdState,
+    FwdBwdState<ForwardReachability, BackwardReachability>,
     GraphColoredVertices,
     FwdBwdStep<ForwardReachability, BackwardReachability>,
 >;
@@ -90,7 +90,7 @@ pub type FwdBwdScc = Generator<
 /// BFS order is not required for `fwd-bwd` to work) and is mostly just intended for benchmarking.
 pub type FwdBwdSccBfs = Generator<
     SccConfig,
-    FwdBwdState,
+    FwdBwdState<ForwardReachabilityBfs, BackwardReachabilityBfs>,
     GraphColoredVertices,
     FwdBwdStep<ForwardReachabilityBfs, BackwardReachabilityBfs>,
 >;
@@ -113,12 +113,7 @@ pub type FwdBwdSccBfs = Generator<
 ///  - The pivot hints are the immediate successors/predecessors of the SCC.
 ///  - If trimming removes pivot hints, we replace them with immediate predecessors/successors
 ///    of the trimmed set.
-pub type ChainScc = Generator<
-    SccConfig,
-    ChainState,
-    GraphColoredVertices,
-    ChainStep<ForwardReachability, BackwardReachability>,
->;
+pub type ChainScc = Generator<SccConfig, ChainState, GraphColoredVertices, ChainStep>;
 
 /// Remove colors that correspond to trivial and short-lived SCCs (if configured to do so).
 fn filter_scc(context: &SccConfig, scc: GraphColoredVertices) -> Option<GraphColoredVertices> {

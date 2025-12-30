@@ -14,6 +14,7 @@ use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
 use cancel_this::Cancellable;
 use computation_process::{Computable, Stateful};
+use std::collections::BTreeSet;
 
 /// Verify that the attractors found match the expected attractors exactly.
 /// This handles the fact that attractors can be returned in arbitrary order.
@@ -83,17 +84,15 @@ fn run_xie_beerel(
     graph: &SymbolicAsyncGraph,
     use_itgr: bool,
 ) -> Cancellable<Vec<GraphColoredVertices>> {
-    let config = AttractorConfig::new(graph.clone());
+    let mut config = AttractorConfig::new(graph.clone());
     let (config, initial_state) = if use_itgr {
         // First, run ITGR to reduce the state space
         let itgr_state = ItgrState::new(graph, &graph.mk_unit_colored_vertices());
         let mut itgr = InterleavedTransitionGuidedReduction::configure(config.clone(), itgr_state);
         let reduced = itgr.compute()?;
 
-        let active_variables = itgr.state().active_variables().collect::<Vec<_>>();
-        let config = config
-            .restrict_state_space(&reduced)
-            .restrict_variables(&active_variables);
+        let active_variables = itgr.state().active_variables().collect::<BTreeSet<_>>();
+        config.active_variables = active_variables;
         let initial_state = XieBeerelState::from(&reduced);
         (config, initial_state)
     } else {

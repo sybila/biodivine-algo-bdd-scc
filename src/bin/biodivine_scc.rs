@@ -131,9 +131,9 @@ fn main() {
     });
 
     // Create SCC config
-    let config = SccConfig::new(graph.clone())
-        .should_trim(args.trim.into())
-        .filter_long_lived(args.long_lived);
+    let mut config = SccConfig::new(graph.clone());
+    config.should_trim = args.trim.into();
+    config.filter_long_lived = args.long_lived;
 
     // Helper function to enumerate SCCs from a generator
     fn enumerate_sccs<G>(generator: G, count: usize) -> usize

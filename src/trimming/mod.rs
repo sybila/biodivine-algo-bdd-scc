@@ -32,7 +32,7 @@ mod tests;
 use crate::reachability::ReachabilityComputation;
 use crate::trimming::step_operators::RelativeSinksAndSources;
 use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
-use computation_process::{Computable, ComputableIdentity, DynComputable, Stateful};
+use computation_process::{Completable, Computable, ComputableIdentity, Stateful};
 pub use iterative_subtraction::IterativeSubtraction;
 pub use step_operators::{RelativeSinks, RelativeSources};
 
@@ -48,6 +48,7 @@ pub type TrimSinksAndSources =
 
 /// Configuration for trimming behavior during SCC computation.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TrimSetting {
     /// Trim both sinks and sources (default).
     #[default]
@@ -60,18 +61,37 @@ pub enum TrimSetting {
     None,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum TrimComputation {
+    None(ComputableIdentity<GraphColoredVertices>),
+    Both(TrimSinksAndSources),
+    Sources(TrimSources),
+    Sinks(TrimSinks),
+}
+
+impl Computable<GraphColoredVertices> for TrimComputation {
+    fn try_compute(&mut self) -> Completable<GraphColoredVertices> {
+        match self {
+            TrimComputation::None(x) => x.try_compute(),
+            TrimComputation::Both(x) => x.try_compute(),
+            TrimComputation::Sources(x) => x.try_compute(),
+            TrimComputation::Sinks(x) => x.try_compute(),
+        }
+    }
+}
+
 impl TrimSetting {
     /// Build a trimming computation based on the current setting.
     pub fn build_computation(
         &self,
         graph: &SymbolicAsyncGraph,
         set: GraphColoredVertices,
-    ) -> DynComputable<GraphColoredVertices> {
+    ) -> TrimComputation {
         match self {
-            TrimSetting::Both => TrimSinksAndSources::configure(graph, set).dyn_computable(),
-            TrimSetting::Sources => TrimSources::configure(graph, set).dyn_computable(),
-            TrimSetting::Sinks => TrimSinks::configure(graph, set).dyn_computable(),
-            TrimSetting::None => ComputableIdentity::from(set).dyn_computable(),
+            TrimSetting::Both => TrimComputation::Both(TrimSinksAndSources::configure(graph, set)),
+            TrimSetting::Sources => TrimComputation::Sources(TrimSources::configure(graph, set)),
+            TrimSetting::Sinks => TrimComputation::Sinks(TrimSinks::configure(graph, set)),
+            TrimSetting::None => TrimComputation::None(ComputableIdentity::from(set)),
         }
     }
 }

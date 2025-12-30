@@ -19,6 +19,7 @@
 //! than running Xie-Beerel directly.
 //!
 //! ```no_run
+//! use std::collections::BTreeSet;
 //! use biodivine_algo_bdd_scc::attractor::{
 //!     AttractorConfig, InterleavedTransitionGuidedReduction, ItgrState, XieBeerelAttractors,
 //!     XieBeerelState,
@@ -31,7 +32,7 @@
 //! let graph = SymbolicAsyncGraph::new(&bn).unwrap();
 //!
 //! // 1) Reduce the universe using ITGR.
-//! let config = AttractorConfig::new(graph.clone());
+//! let mut config = AttractorConfig::new(graph.clone());
 //! let itgr_state = ItgrState::new(&graph, &graph.mk_unit_colored_vertices());
 //! let mut itgr = InterleavedTransitionGuidedReduction::configure(config.clone(), itgr_state);
 //! // This step is cancellable and returns the reduced state space (or error).
@@ -39,9 +40,7 @@
 //!
 //! // 2) Restrict the attractor search to the reduced state space and variables.
 //! //    Note: active_variables() returns an iterator, which `restrict_variables` can consume.
-//! let config = config
-//!     .restrict_state_space(&reduced)
-//!     .restrict_variables(itgr.state().active_variables());
+//!  config.active_variables = BTreeSet::from_iter(itgr.state().active_variables());
 //!
 //! // 3) Enumerate attractors.
 //! let initial_state = XieBeerelState::from(&reduced);
