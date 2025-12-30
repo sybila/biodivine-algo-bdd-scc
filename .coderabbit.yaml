@@ -2,3 +2,6 @@ reviews:
   path_filters:
     - "!models/**"
     - "!datasets/**"
+issue_enrichment:
+  auto_enrich:
+    enabled: false
