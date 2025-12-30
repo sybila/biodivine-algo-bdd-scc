@@ -21,7 +21,7 @@ pub struct ReachabilityConfig {
     ///
     /// The procedure is allowed to panic if this set contains variables not valid in
     /// the associated [`SymbolicAsyncGraph`].
-    pub variables: BTreeSet<VariableId>,
+    pub active_variables: BTreeSet<VariableId>,
     /// Cancel the procedure if it exceeds the specified number of iterations (default:
     /// `usize::MAX`).
     ///
@@ -52,7 +52,7 @@ impl ReachabilityConfig {
     /// all available network variables.
     pub fn new(graph: SymbolicAsyncGraph) -> ReachabilityConfig {
         ReachabilityConfig {
-            variables: BTreeSet::from_iter(graph.variables()),
+            active_variables: BTreeSet::from_iter(graph.variables()),
             graph,
             max_iterations: usize::MAX,
             max_symbolic_size: usize::MAX,

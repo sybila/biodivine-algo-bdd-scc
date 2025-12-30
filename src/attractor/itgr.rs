@@ -137,7 +137,7 @@ impl ItgrState {
     /// The result of this method is typically used to restrict the variable set for subsequent
     /// algorithms (like [`XieBeerelAttractors`](crate::attractor::XieBeerelAttractors)).
     pub fn active_variables(&self) -> impl Iterator<Item = VariableId> {
-        self.remaining_reachability.variables.iter().copied()
+        self.remaining_reachability.active_variables.iter().copied()
     }
 }
 
@@ -153,14 +153,14 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
 
             // Note: This is not super impactful, but can save some overhead
             // for very large network.
-            for var in state.remaining_reachability.variables.clone() {
+            for var in state.remaining_reachability.active_variables.clone() {
                 let can_post = state
                     .remaining_reachability
                     .graph
                     .var_can_post_within(var, &state.remaining_set);
                 if can_post.is_empty() {
                     debug!("Variable {} eliminated.", var);
-                    state.remaining_reachability.variables.remove(&var);
+                    state.remaining_reachability.active_variables.remove(&var);
                 }
             }
 

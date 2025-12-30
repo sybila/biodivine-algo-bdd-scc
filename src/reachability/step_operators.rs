@@ -27,7 +27,7 @@ impl ReachabilityStep for BfsSuccessors {
         state: &GraphColoredVertices,
     ) -> Cancellable<GraphColoredVertices> {
         let mut post = context.graph.mk_empty_colored_vertices();
-        for var in context.variables.iter().rev() {
+        for var in context.active_variables.iter().rev() {
             is_cancelled!()?;
             let var_successors = context.graph.var_post_out(*var, state);
             if !var_successors.is_empty() {
@@ -47,7 +47,7 @@ impl ReachabilityStep for BfsPredecessors {
         state: &GraphColoredVertices,
     ) -> Cancellable<GraphColoredVertices> {
         let mut pre = context.graph.mk_empty_colored_vertices();
-        for var in context.variables.iter().rev() {
+        for var in context.active_variables.iter().rev() {
             is_cancelled!()?;
             let var_predecessors = context.graph.var_pre_out(*var, state);
             if !var_predecessors.is_empty() {
@@ -65,7 +65,7 @@ impl ReachabilityStep for SaturationSuccessors {
         context: &ReachabilityConfig,
         state: &GraphColoredVertices,
     ) -> Cancellable<GraphColoredVertices> {
-        for var in context.variables.iter().rev() {
+        for var in context.active_variables.iter().rev() {
             is_cancelled!()?;
             let step = context.graph.var_post_out(*var, state);
             if !step.is_empty() {
@@ -83,7 +83,7 @@ impl ReachabilityStep for SaturationPredecessors {
         context: &ReachabilityConfig,
         state: &GraphColoredVertices,
     ) -> Cancellable<GraphColoredVertices> {
-        for var in context.variables.iter().rev() {
+        for var in context.active_variables.iter().rev() {
             is_cancelled!()?;
             let step = context.graph.var_pre_out(*var, state);
             if !step.is_empty() {

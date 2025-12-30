@@ -25,7 +25,7 @@ impl ReachabilityStep for RelativeSinks {
         // We compute the result by inversion: union all states that have a successor
         // and then invert the set.
         let mut has_successor = context.graph.mk_empty_colored_vertices();
-        for var in context.variables.iter().rev() {
+        for var in context.active_variables.iter().rev() {
             is_cancelled!()?;
             let var_successor = context.graph.var_can_post_within(*var, state);
             if !var_successor.is_subset(&has_successor) {
@@ -49,7 +49,7 @@ impl ReachabilityStep for RelativeSources {
         // We compute the result by inversion: union all states that have a predecessor
         // and then invert the set.
         let mut has_predecessor = context.graph.mk_empty_colored_vertices();
-        for var in context.variables.iter().rev() {
+        for var in context.active_variables.iter().rev() {
             is_cancelled!()?;
             let var_predecessor = context.graph.var_can_pre_within(*var, state);
             if !var_predecessor.is_subset(&has_predecessor) {

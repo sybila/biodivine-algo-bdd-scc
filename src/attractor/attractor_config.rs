@@ -44,7 +44,7 @@ impl From<&AttractorConfig> for ReachabilityConfig {
     fn from(value: &AttractorConfig) -> Self {
         ReachabilityConfig {
             graph: value.graph.clone(),
-            variables: value.active_variables.clone(),
+            active_variables: value.active_variables.clone(),
             max_iterations: usize::MAX,
             max_symbolic_size: usize::MAX,
         }
