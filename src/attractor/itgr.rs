@@ -108,6 +108,29 @@ impl ItgrState {
         }
     }
 
+    /// Create a new [`ItgrState`] using a restricted set of variables (i.e., only the given
+    /// variables will be reduced).
+    pub fn new_with_variables(
+        graph: &SymbolicAsyncGraph,
+        universe: &GraphColoredVertices,
+        variables: &[VariableId],
+    ) -> Self {
+        ItgrState {
+            remaining_set: universe.clone(),
+            remaining_reachability: graph.restrict(universe).into(),
+            to_discard: None,
+            reductions: variables
+                .iter()
+                .map(|it| {
+                    let step = Step::Forward(StepForward {
+                        forward: graph.var_can_post(*it, universe),
+                    });
+                    (*it, step)
+                })
+                .collect(),
+        }
+    }
+
     /// Returns an iterator over variables that are still considered "active" (i.e., not eliminated)
     /// in the current state of reduction.
     ///
