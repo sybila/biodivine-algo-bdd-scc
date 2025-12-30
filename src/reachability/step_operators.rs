@@ -34,7 +34,7 @@ impl ReachabilityStep for BfsSuccessors {
                 is_cancelled!()?;
                 post = post.union(&var_successors);
 
-                trace!("Successors updated using `{var}` ({}).", log_set(&post));
+                trace!("[{var}] Successors found ({}).", log_set(&post));
             }
         }
         Ok(post)
@@ -53,7 +53,7 @@ impl ReachabilityStep for BfsPredecessors {
             if !var_predecessors.is_empty() {
                 pre = pre.union(&var_predecessors);
 
-                trace!("Predecessors updated using `{var}` ({}).", log_set(&pre));
+                trace!("[{var}] Predecessors found ({}).", log_set(&pre));
             }
         }
         Ok(pre)
@@ -69,7 +69,7 @@ impl ReachabilityStep for SaturationSuccessors {
             is_cancelled!()?;
             let step = context.graph.var_post_out(*var, state);
             if !step.is_empty() {
-                trace!("Found successors using `{var}` ({}).", log_set(&step));
+                trace!("[{var}] Successors found ({}).", log_set(&step));
                 return Ok(step);
             }
         }
@@ -87,7 +87,7 @@ impl ReachabilityStep for SaturationPredecessors {
             is_cancelled!()?;
             let step = context.graph.var_pre_out(*var, state);
             if !step.is_empty() {
-                trace!("Found predecessors using `{var}` ({}).", log_set(&step));
+                trace!("[{var}] Predecessors found ({}).", log_set(&step));
                 return Ok(step);
             }
         }

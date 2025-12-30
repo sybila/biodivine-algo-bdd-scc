@@ -192,13 +192,13 @@ impl ComputationStep<AttractorConfig, ItgrState, GraphColoredVertices> for ItgrS
                             var,
                             log_set(&forward)
                         );
+
+                        let mut forward_config = state.remaining_reachability.clone();
+                        forward_config.graph = forward_config.graph.restrict(&forward);
                         state.reductions.push((
                             var,
                             Step::Extended(Box::new(StepExtendedComponent {
-                                universe_forward: state
-                                    .remaining_reachability
-                                    .clone()
-                                    .restrict_state_space(&forward),
+                                universe_forward: forward_config,
                                 extended_component: context
                                     .graph
                                     .var_can_post(var, &state.remaining_set),

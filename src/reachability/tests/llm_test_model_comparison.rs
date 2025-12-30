@@ -6,7 +6,7 @@
 
 use crate::reachability::{
     BfsPredecessors, BfsSuccessors, IterativeUnion, ReachabilityComputation, ReachabilityConfig,
-    SaturationPredecessors, SaturationSuccessors,
+    ReachabilityState, SaturationPredecessors, SaturationSuccessors,
 };
 use biodivine_lib_param_bn::BooleanNetwork;
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
@@ -26,9 +26,9 @@ use test_generator::test_resources;
 fn test_reachability_comparison_impl<VariantA, VariantB>(model_path: &str) -> Cancellable<()>
 where
     VariantA:
-        ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
+        ComputationStep<ReachabilityConfig, ReachabilityState, GraphColoredVertices> + 'static,
     VariantB:
-        ComputationStep<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static,
+        ComputationStep<ReachabilityConfig, ReachabilityState, GraphColoredVertices> + 'static,
 {
     // Load the model
     let bn = BooleanNetwork::try_from_file(model_path)

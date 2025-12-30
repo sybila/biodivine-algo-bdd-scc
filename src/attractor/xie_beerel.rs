@@ -75,8 +75,8 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
                     pivot_hint.pick_vertex()
                 };
 
-                let bwd_config =
-                    ReachabilityConfig::from(context).restrict_state_space(&state.remaining);
+                let mut bwd_config = ReachabilityConfig::from(context);
+                bwd_config.graph = bwd_config.graph.restrict(&state.remaining);
                 state.computing = Step::Basin(Step1 {
                     basin: BackwardReachability::configure(bwd_config, pivot.clone()),
                     pivot,

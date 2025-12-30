@@ -45,10 +45,12 @@ mod tests;
 
 mod iterative_union;
 mod reachability_config;
+mod reachability_state;
 mod step_operators;
 
 pub use iterative_union::IterativeUnion;
 pub use reachability_config::ReachabilityConfig;
+pub use reachability_state::ReachabilityState;
 pub use step_operators::{
     BfsPredecessors, BfsSuccessors, SaturationPredecessors, SaturationSuccessors,
 };
@@ -56,15 +58,15 @@ pub use step_operators::{
 /// A helper alias which allows us to use [`ReachabilityComputation`] as shorthand for
 /// `Computation<Context = ReachabilityConfig, State = GraphColoredVertices>`.
 pub type ReachabilityComputation<STEP> =
-    Computation<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices, STEP>;
+    Computation<ReachabilityConfig, ReachabilityState, GraphColoredVertices, STEP>;
 
 /// A helper trait which allows us to use [`ReachabilityAlgorithm`] as shorthand for
 /// `Algorithm<Context = ReachabilityConfig, State = GraphColoredVertices>`.
 pub trait ReachabilityAlgorithm:
-    Algorithm<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static
+    Algorithm<ReachabilityConfig, ReachabilityState, GraphColoredVertices> + 'static
 {
 }
-impl<T: Algorithm<ReachabilityConfig, GraphColoredVertices, GraphColoredVertices> + 'static>
+impl<T: Algorithm<ReachabilityConfig, ReachabilityState, GraphColoredVertices> + 'static>
     ReachabilityAlgorithm for T
 {
 }
