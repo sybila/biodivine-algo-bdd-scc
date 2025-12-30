@@ -5,6 +5,7 @@ use std::collections::BTreeSet;
 
 /// A configuration object for attractor detection algorithms.
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AttractorConfig {
     /// The graph used for attractor computation. You can restrict this graph to a subset
     /// of vertices using [`SymbolicAsyncGraph::restrict`], but keep in mind that this also
