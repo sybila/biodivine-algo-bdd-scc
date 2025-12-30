@@ -11,6 +11,7 @@ use computation_process::{Completable, ComputationStep};
 use log::{debug, info};
 use std::cmp::Reverse;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ItgrState {
     /// Current set of remaining states (the result of the computation).
     remaining_set: GraphColoredVertices,
@@ -25,26 +26,31 @@ pub struct ItgrState {
 
 pub struct ItgrStep;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct StepForward {
     forward: GraphColoredVertices,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct StepExtendedComponent {
     forward: GraphColoredVertices,
     extended_component: GraphColoredVertices,
     universe_forward: ReachabilityConfig,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct StepForwardBasin {
     forward: GraphColoredVertices,
     basin: GraphColoredVertices,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct StepBottomBasin {
     bottom: GraphColoredVertices,
     basin: GraphColoredVertices,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum Step {
     Forward(StepForward),
     Extended(Box<StepExtendedComponent>),

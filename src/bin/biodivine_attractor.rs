@@ -8,6 +8,7 @@ use clap::Parser;
 use computation_process::{Computable, Stateful};
 use env_logger::Builder;
 use log::LevelFilter;
+use std::collections::BTreeSet;
 
 #[derive(Parser)]
 #[command(name = "biodivine_attractor")]
@@ -145,7 +146,7 @@ fn main() {
         }
         Algorithm::ItgrXieBeerel => {
             // First, run ITGR to reduce the state space
-            let config = AttractorConfig::new(graph.clone());
+            let mut config = AttractorConfig::new(graph.clone());
             let itgr_state = ItgrState::new(&graph, &graph.mk_unit_colored_vertices());
             let mut itgr =
                 InterleavedTransitionGuidedReduction::configure(config.clone(), itgr_state);
@@ -157,7 +158,7 @@ fn main() {
                 }
             };
 
-            let active_variables = itgr.state().active_variables().collect::<Vec<_>>();
+            let active_variables = itgr.state().active_variables().collect::<BTreeSet<_>>();
             println!(
                 "ITGR reduced state space to {} states and {} active variables (original size: {}).",
                 reduced.exact_cardinality(),
@@ -166,9 +167,7 @@ fn main() {
             );
 
             // Then run Xie-Beerel on the reduced state space
-            let config = config
-                .restrict_state_space(&reduced)
-                .restrict_variables(&active_variables);
+            config.active_variables = active_variables;
             let initial_state = XieBeerelState::from(&reduced);
             enumerate_attractors(config, initial_state, args.count)
         }

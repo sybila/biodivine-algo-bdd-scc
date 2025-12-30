@@ -10,6 +10,7 @@ use computation_process::{Completable, Computable, GeneratorStep, Stateful};
 use log::{debug, info};
 
 /// Internal state of the Xie-Beerel attractor algorithm.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct XieBeerelState {
     computing: Step,
     remaining: GraphColoredVertices,
@@ -22,18 +23,21 @@ pub struct XieBeerelState {
 /// and implements the [`GeneratorStep`] trait for attractor enumeration.
 pub struct XieBeerelStep;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum Step {
     Idle,
-    Basin(Step1),
-    Attractor(Step2),
+    Basin(StepBasin),
+    Attractor(StepAttractor),
 }
 
-struct Step1 {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+struct StepBasin {
     pivot: GraphColoredVertices,
     basin: BackwardReachability,
 }
 
-struct Step2 {
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+struct StepAttractor {
     basin: GraphColoredVertices,
     /// Just a copy of our AttractorConfig intended for reachability.
     attractor_config: ReachabilityConfig,
@@ -77,7 +81,7 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
 
                 let mut bwd_config = ReachabilityConfig::from(context);
                 bwd_config.graph = bwd_config.graph.restrict(&state.remaining);
-                state.computing = Step::Basin(Step1 {
+                state.computing = Step::Basin(StepBasin {
                     basin: BackwardReachability::configure(bwd_config, pivot.clone()),
                     pivot,
                 });
@@ -86,7 +90,7 @@ impl GeneratorStep<AttractorConfig, XieBeerelState, GraphColoredVertices> for Xi
             Step::Basin(step) => {
                 // Basin is just computed fully without any special treatment:
                 let basin = step.basin.try_compute()?;
-                state.computing = Step::Attractor(Step2 {
+                state.computing = Step::Attractor(StepAttractor {
                     basin,
                     attractor: step.pivot.clone(),
                     attractor_config: context.into(),

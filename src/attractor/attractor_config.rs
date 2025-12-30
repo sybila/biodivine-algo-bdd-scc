@@ -1,17 +1,30 @@
 use crate::reachability::ReachabilityConfig;
 use biodivine_lib_param_bn::VariableId;
-use biodivine_lib_param_bn::symbolic_async_graph::{GraphColoredVertices, SymbolicAsyncGraph};
-use std::borrow::Borrow;
+use biodivine_lib_param_bn::symbolic_async_graph::SymbolicAsyncGraph;
 use std::collections::BTreeSet;
 
-/// A configuration object for various attractor detection algorithms.
+/// A configuration object for attractor detection algorithms.
 #[derive(Clone)]
 pub struct AttractorConfig {
-    /// The graph used for attractor computation.
+    /// The graph used for attractor computation. You can restrict this graph to a subset
+    /// of vertices using [`SymbolicAsyncGraph::restrict`], but keep in mind that this also
+    /// eliminates the associated transitions, potentially creating new "fake" attractors
+    /// unless the new restriction is forward-closed in the original graph.
+    ///
+    /// If you are only interested in a subset of attractors, you want to instead limit the
+    /// initial set used by the algorithm.
     pub graph: SymbolicAsyncGraph,
     /// If it is known that only a subset of variables can update (e.g., when exploring
-    /// a trap space), this can be indicated by restricting the considered variables.
+    /// a trap space), this can be indicated by restricting the considered variables. Note that
+    /// (same as with `graph`), if you restrict variables that still can update, you can create
+    /// spurious attractors.
     pub active_variables: BTreeSet<VariableId>,
+    /// Cancel the procedure if the symbolic representation exceeds the given number of BDD nodes
+    /// (default: `usize::MAX`).
+    ///
+    /// Note: In the future, this could be replaced by a global "symbolic size" cancellation
+    /// trigger, but this will likely rely on direct support from the BDD library.
+    pub max_symbolic_size: usize,
 }
 
 impl From<SymbolicAsyncGraph> for AttractorConfig {
@@ -42,40 +55,8 @@ impl AttractorConfig {
     pub fn new(graph: SymbolicAsyncGraph) -> AttractorConfig {
         AttractorConfig {
             active_variables: graph.variables().collect(),
+            max_symbolic_size: usize::MAX,
             graph,
         }
-    }
-
-    /// Configure the overall state space that this attractor detection is allowed to explore.
-    ///
-    /// States that are not in this state space are not fully removed, but their transitions
-    /// are ignored, meaning they do not contribute towards reachability.
-    pub fn restrict_state_space(mut self, state_space: &GraphColoredVertices) -> Self {
-        self.graph = self.graph.restrict(state_space);
-        self
-    }
-
-    /// Set the variables that can update inside an attractor. All other
-    /// variables will be ignored.
-    ///
-    /// # Panics
-    ///
-    /// The method will panic if you submit a variable ID that is not valid in the current graph.
-    pub fn restrict_variables<I>(mut self, variables: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Borrow<VariableId>,
-    {
-        let variables: BTreeSet<VariableId> =
-            BTreeSet::from_iter(variables.into_iter().map(|v| *v.borrow()));
-
-        // Check that all variables are valid in this graph. Using the maximal variable
-        // is enough because valid variables are always a continuous range.
-        if let Some(last) = variables.last() {
-            assert!(last.to_index() < self.graph.num_vars());
-        }
-
-        self.active_variables = variables;
-        self
     }
 }
