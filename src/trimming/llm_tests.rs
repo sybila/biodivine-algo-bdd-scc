@@ -11,19 +11,11 @@ use crate::test_utils::llm_example_network::sets::{
     ALL_STATES, ATTRACTOR_1, ATTRACTOR_2, SOURCE_STATES, STRONG_BASIN_ATTR1, WEAK_BASIN,
 };
 use crate::test_utils::llm_example_network::states::*;
-use crate::test_utils::{mk_state, mk_states};
+use crate::test_utils::{init_logger, mk_state, mk_states};
 use crate::trimming::{TrimSinks, TrimSources};
 use biodivine_lib_param_bn::biodivine_std::traits::Set;
 use cancel_this::Cancellable;
 use computation_process::Algorithm;
-
-/// Initialize env_logger for tests. Safe to call multiple times.
-fn init_logger() {
-    let _ = env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Trace)
-        .is_test(true)
-        .try_init();
-}
 
 // ========== TrimSources tests ==========
 

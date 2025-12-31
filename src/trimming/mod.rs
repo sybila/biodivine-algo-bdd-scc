@@ -27,7 +27,7 @@ mod iterative_subtraction;
 mod step_operators;
 
 #[cfg(test)]
-mod tests;
+mod llm_tests;
 
 use crate::reachability::ReachabilityComputation;
 use crate::trimming::step_operators::RelativeSinksAndSources;
