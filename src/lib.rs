@@ -65,6 +65,7 @@ mod test_utils;
 pub mod attractor;
 pub mod reachability;
 pub mod scc;
+pub mod trapping;
 pub mod trimming;
 
 /// A utility method for printing useful metadata of symbolic sets.
