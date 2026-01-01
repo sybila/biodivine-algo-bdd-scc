@@ -46,7 +46,7 @@ impl From<&AttractorConfig> for ReachabilityConfig {
             graph: value.graph.clone(),
             active_variables: value.active_variables.clone(),
             max_iterations: usize::MAX,
-            max_symbolic_size: usize::MAX,
+            max_symbolic_size: value.max_symbolic_size,
         }
     }
 }

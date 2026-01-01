@@ -80,11 +80,12 @@ fn verify_attractors(
 // ========== Helper functions ==========
 
 /// Run XieBeerel algorithm on a graph (with optional ITGR reduction).
-fn run_xie_beerel(
-    graph: &SymbolicAsyncGraph,
+fn run_xie_beerel<T: Into<AttractorConfig>>(
+    graph: T,
     use_itgr: bool,
 ) -> Cancellable<Vec<GraphColoredVertices>> {
-    let mut config = AttractorConfig::new(graph.clone());
+    let mut config: AttractorConfig = graph.into();
+    let graph = &config.graph;
     let (config, initial_state) = if use_itgr {
         // First, run ITGR to reduce the state space
         let itgr_state = ItgrState::new(graph, &graph.mk_unit_colored_vertices());
@@ -114,7 +115,13 @@ fn run_xie_beerel(
 fn test_find_all_attractors_impl(use_itgr: bool) -> Cancellable<()> {
     init_logger();
     let graph = create_test_network();
-    let attractors = run_xie_beerel(&graph, use_itgr)?;
+    let mut config = AttractorConfig::new(graph.clone());
+    config.max_symbolic_size = 3;
+
+    assert!(run_xie_beerel(config.clone(), use_itgr).is_err());
+
+    config.max_symbolic_size = 1000;
+    let attractors = run_xie_beerel(config, use_itgr)?;
 
     // Should find exactly two attractors: {000} and {110, 111}
     verify_attractors(&graph, attractors, &[ATTRACTOR_1, ATTRACTOR_2]);
